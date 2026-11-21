@@ -1,7 +1,7 @@
 # Rings
 
-**Stenography for your thumbs.** Rings is an Android keyboard that lets you write steno on a phone without looking at
-your hands, with two thumbs or just one. Floating thumb sticks stand in for the steno machine, and the real
+Rings is a steno keyboard for Android that you write on with your thumbs, two of them or just one, without looking at
+your hands. Floating thumb sticks stand in for the steno machine, and the real
 [Plover](https://www.openstenoproject.org/plover/) engine does the translating.
 
 <p align="center">
@@ -26,16 +26,15 @@ your hands, with two thumbs or just one. Floating thumb sticks stand in for the 
 
 ## What it is
 
-A steno machine has 23 keys and expects ten fingers. A phone gives you two thumbs, sometimes only one, and a sheet of
-glass you cannot feel. Rings bridges that gap with a stick under each thumb, or a single stick that one thumb swaps
-between the two sides:
+A steno machine has 23 keys and wants all ten fingers. On a phone you get two thumbs, sometimes only one, and glass
+you can't feel. So Rings puts a stick under each thumb, or one stick that a single thumb swaps between the two sides.
 
-- A stick opens **wherever your thumb lands**, so there is nothing to aim at.
+- A stick opens wherever your thumb lands, so there's nothing to aim at.
 - Each stick is a small copy of that hand's side of the steno board. You push toward where the key sits.
-- Everything is confirmed by vibration and by a tape that shows what each stroke became, so your eyes stay on what you
-  are writing.
+- Vibration tells you what happened and a tape shows what each stroke became, so you can keep your eyes on what
+  you're writing.
 
-It works as a system keyboard in any app, and it comes with an app screen for practice, lessons, dictionaries and
+It's a system keyboard, so it works in any app. The app itself has a practice page, lessons, dictionaries and
 settings.
 
 ## How writing works
@@ -45,39 +44,37 @@ settings.
 - **Short push**: a key from the block of six, `T P H / K W R` on the left and `F P L / R B G` on the right.
 - **Long push**: the keys beyond the block. Vowels below, `#` above, `S` and `*` to the sides, `T D S Z` on the right.
 - **Tap**: the stick's click, `S` on the left and `*` (undo) on the right.
-- **Roll**: slide from one key onto its neighbour to take both.
+- **Roll**: slide from one key onto its neighbor to take both.
 - **Lift both thumbs**: after a short wait the stroke is sent.
 - **One thumb**: a single stick does both hands, and a tap swaps it between the left keys and the right.
 
-A double tick tells you a push has gone long. A longer tick tells you the stroke has gone. Three ticks mean the
-stroke had no entry.
+A double tick means the push went long. A longer tick means the stroke was sent, and three ticks mean it had no
+entry.
 
-Dead zones keep slips out: nothing counts until your thumb has clearly left the spot where it landed, the gaps
+Dead zones keep slips out. Nothing counts until your thumb has clearly left the spot where it landed, the gaps
 between keys belong to no key, and a touch that rests or slides a little does nothing.
 
-Near a screen edge the stick is cut off flat so that all of it stays on screen. Every key keeps its direction, and
-only the push toward the edge gets shorter.
+Near a screen edge the stick is cut off flat so all of it stays on screen. Every key keeps its direction, and only
+the push toward the edge gets shorter.
 
 <br clear="right">
 
 ## Features
 
-- **The real Plover engine.** Plover 5.4.2 runs inside the app, with its own config, dictionaries, commands and
-  plugin registry. Nothing is reimplemented.
-- **Lapwing and Plover systems built in**, each with its own dictionary stack, including Lapwing's Python and modal
-  dictionaries.
-- **One-thumb mode** for writing with one hand, with a single stick that a tap swaps between the two sides.
-- **Lessons** that teach the sticks step by step, and word drills drawn from whatever dictionaries you have loaded.
-- **Fit the sticks to your thumbs.** Twelve test pushes set the distances and the tilt of each stick to match how your
-  thumbs really move.
-- **Live preview.** While you build a stroke, the tape shows what it will become.
-- **Shorter-outline hints** when you write something the long way.
-- **Look up and Add translation** panels, opened by the same strokes as in Plover, with a letter keyboard for typing
-  words you cannot stroke yet.
-- **Dictionaries and plugins.** Add `.json`, `.py`, `.modal`, `.rtf` or `.zip` files, or a plugin's `.whl`, by
-  picking them, sharing them, or opening them with Rings.
-- **Settings for everything**: every distance, angle and delay has a slider and a number box.
-- **No internet permission.** A keyboard sees everything you type. This one has no way to send it anywhere.
+- Plover 5.4.2 itself runs inside the app, with its own config, dictionaries, commands and plugin registry.
+- Lapwing and Plover (English Stenotype) are built in, each with its own dictionary stack. Lapwing's Python and modal
+  dictionaries work.
+- One-thumb mode: a single stick that a tap swaps between the two sides.
+- Lessons that teach the sticks step by step, plus word drills drawn from whatever dictionaries you have loaded.
+- Fitting: twelve test pushes set the distances and the tilt of each stick to how your thumbs move.
+- A live preview on the tape of what the stroke you're building will become.
+- A hint when there's a shorter outline for what you just wrote.
+- Look up and Add translation panels, opened by the same strokes as in Plover, with a letter keyboard for words you
+  can't stroke yet.
+- Add `.json`, `.py`, `.modal`, `.rtf` or `.zip` files, or a plugin's `.whl`, by picking them, sharing them, or
+  opening them with Rings.
+- A slider and a number box for every distance, angle and delay.
+- No internet permission. The keyboard has no way to send what you type anywhere.
 
 ## Install
 
@@ -105,9 +102,9 @@ The first launch opens on the lessons. Start with **Fit the sticks to your thumb
   <img src="docs/screenshots/fit.png" width="230" alt="Fitting the sticks: a short push straight up with the left thumb">
 </p>
 
-Eleven short lessons go from single keys to rolls, one-thumb writing and whole words. Each step names a key or stroke, says how to make it,
-and shows a picture of each stick that lights up with what your thumb is holding. Nothing you write in a lesson is
-typed anywhere.
+Eleven short lessons go from single keys to rolls, one-thumb writing and whole words. Each step names a key or
+stroke, says how to make it, and shows a picture of each stick that lights up with what your thumb is holding.
+Nothing you write in a lesson gets typed anywhere.
 
 Fitting asks for short and long pushes straight up with each thumb. From those it sets the dead zone, the distance
 where a long push begins, and how far each stick is turned so that your thumb's natural "up" counts as up.
@@ -121,8 +118,9 @@ single stick you can land on anywhere.
 
 - Every stroke starts on the **left keys**.
 - A quick **tap** swaps the stick to the **right keys**, and another tap swaps it back.
-- Two ticks say right, one says left, and the pad changes colour with the side it is on.
-- Once the stroke is sent the stick is back on the left. A tap on its own keeps for as long as you take.
+- Two ticks say right, one says left, and the pad changes color with the side it's on.
+- Once the stroke is sent the stick is back on the left. If you tap and then wait, it stays swapped until you write
+  the stroke.
 
 With one thumb, `S` and `*` are long pushes on the left keys (left and right), because the tap is busy swapping.
 The same button or setting takes you back to two thumbs.
@@ -136,11 +134,11 @@ The same button or setting takes you back to two thumbs.
   <img src="docs/screenshots/add-translation.png" width="230" alt="Adding a translation for a word that was just fingerspelled">
 </p>
 
-Both panels open from the buttons beside the tape (magnifier and plus), or from your dictionary's own strokes for `{PLOVER:LOOKUP}` and
-`{PLOVER:ADD_TRANSLATION}`.
+Both panels open from the buttons beside the tape (magnifier and plus), or from your dictionary's own strokes for
+`{PLOVER:LOOKUP}` and `{PLOVER:ADD_TRANSLATION}`.
 
 - **Look up** uses plain letter keys, because fingerspelling a word to find its outline is no fun.
-- **Add translation** works as it does in Plover: write or fingerspell a word, stroke `TKUPT`, and the panel opens
+- **Add translation** works the way it does in Plover. Write or fingerspell a word, stroke `TKUPT`, and the panel opens
   with that word filled in and the cursor waiting for the strokes. `Tab` changes field, `Return` saves, `Escape` closes.
 
 ### Dictionaries and plugins
@@ -153,19 +151,19 @@ Both panels open from the buttons beside the tape (magnifier and plus), or from 
 Tap the system name at the top of the app to open the stack. The top dictionary wins, as in Plover. Each system keeps
 its own stack in Plover's own config file.
 
-Three ways to add files:
+You can add files three ways:
 
 1. **Add files** in the panel, which opens the phone's file picker.
 2. **Share** a file to Rings from any app.
 3. **Open with** Rings from a file manager or a download.
 
-Plugins are added the same way from their `.whl` file (on PyPI, under "Download files"). Only pure Python plugins
-can run on a phone. Extensions, such as the one Lapwing's movement dictionary needs, have a switch in the same panel.
+Plugins go in the same way, from their `.whl` file (on PyPI, under "Download files"). Only pure Python plugins can
+run on a phone. Extensions, like the one Lapwing's movement dictionary needs, have a switch in the same panel.
 
 ### Settings
 
-Open them with the gear, on the app screen or beside the keyboard's tape. Every Low, Medium, High choice is a slider
-with a number box. The ones worth knowing first:
+Open them with the gear, on the app screen or beside the keyboard's tape. Every distance, angle and delay is a
+slider with a number box next to it. The ones worth knowing first:
 
 | Setting | What it does |
 | --- | --- |
@@ -199,12 +197,12 @@ flowchart LR
     plover -- "text" --> activity
 ```
 
-- **The page** is the whole interface: one web page shown in full on the app screen, and as just the tape and pad in
-  the keyboard. It turns touches into steno strokes and draws everything.
+- **The page** is the whole interface. It's one web page, shown in full on the app screen and as only the tape and
+  pad in the keyboard. It turns touches into steno strokes and draws everything.
 - **The shell** hosts the page in a WebView, gives it a small bridge to the phone (haptics, clipboard, keyboard
   switching), and types Plover's output into whatever app has the cursor.
 - **The engine** is Plover, started headless by the `rings` Python package through [Chaquopy](https://chaquo.com/chaquopy/).
-  The package only starts Plover, feeds it strokes and reports what it typed. It translates nothing itself.
+  The package starts Plover, feeds it strokes and reports back what it typed. All the translating is Plover's.
 
 ### Project layout
 
@@ -226,13 +224,13 @@ app/src/main/
       main.js           Start-up and what the app calls back into
   java/app/rings/steno/
     App.java            Starts Plover with the process
-    Plover.java         The door to the Python engine
+    Plover.java         Calls into the Python engine
     Page.java           The WebView showing the page
     Bridge.java         What the page can ask of the phone
     KeyboardHost.java   What only the keyboard can do for the page
     RingsIme.java       The keyboard service
     Editor.java         Types Plover's output into other apps
-    Haptics.java        The vocabulary of ticks
+    Haptics.java        The vibration patterns
     MainActivity.java   The app screen
   python/rings/
     api.py              The one entry point: call(method, json)
@@ -262,12 +260,12 @@ tests/                  Engine tests and an on-device check
 ./gradlew assembleRelease      # app/build/outputs/apk/release/rings-1.0.0-release.apk
 ```
 
-The debug build turns on WebView debugging so the page can be inspected over adb. The release build does not.
+The debug build turns on WebView debugging so you can inspect the page over adb. The release build doesn't.
 
 ### Signing a release
 
-Without any setup, release builds are signed with the debug key. That installs fine on your own phone, but it is not
-a key to hand an app out with. To use your own, create `keystore.properties` beside `settings.gradle`:
+With no setup, release builds are signed with the debug key. That's fine for your own phone but not for an APK you
+give to other people. To use your own key, create `keystore.properties` beside `settings.gradle`:
 
 ```properties
 storeFile=/path/to/your.jks
@@ -276,7 +274,7 @@ keyAlias=...
 keyPassword=...
 ```
 
-The file and any keystore are ignored by git.
+Git ignores that file and any keystore.
 
 ### Tests
 
@@ -297,36 +295,36 @@ The device check makes real strokes on the app screen and puts back any settings
 
 Plover needs two small C extensions, `plover_stroke` and `rtf_tokenize`, and PyPI has no Android builds of them.
 `native/build_wheels.py` compiles the unmodified source releases with the NDK against Chaquopy's Python and writes
-the wheels the app build installs. It checks each source archive against a pinned SHA-256 first. Run it again only
-if the Python version, those packages, or the ABI change.
+the wheels the app build installs. It checks each source archive against a pinned SHA-256 first. You only need to
+run it again if the Python version, those packages, or the ABI change.
 
 ## Privacy and security
 
-- The app requests **no internet permission**. Its only permission is vibration.
-- **Files from other apps are never added silently.** Anything shared to Rings or opened with it is shown to you
-  first, with a warning when it contains code.
-- **Python dictionaries and plugins run as code** inside the keyboard, exactly as they do in Plover on a computer.
-  Add only ones you trust.
-- **In password boxes the tape shows nothing** of what you write.
+- The app asks for no internet permission. Its only permission is vibration.
+- Files from other apps are never added silently. Anything shared to Rings or opened with it is shown to you first,
+  with a warning when it contains code.
+- Python dictionaries and plugins run as code inside the keyboard, the same as they do in Plover on a computer. Only
+  add ones you trust.
+- In password boxes the tape shows nothing of what you write.
 - Plover's stroke and translation logs are kept switched off, so what you type is never written to a file.
-- The page can load only its own files and cannot navigate anywhere else.
+- The page can load only its own files and can't navigate anywhere else.
 
 ## Limitations
 
 - arm64 phones only, Android 11 or later.
 - English systems only for now (Lapwing and Plover's English Stenotype).
-- Plugins with compiled code cannot be added, and there is no install-by-name from PyPI because the app is offline
-  by design.
-- Machine and window plugins are not loaded: there is no steno hardware to open and no desktop to draw on.
+- Plugins with compiled code can't be added, and there's no install-by-name from PyPI because the app has no
+  internet access.
+- Machine and window plugins aren't loaded, since there's no steno hardware to open and no desktop to draw on.
 - A stroke that needs a block key and an outer key on the same hand takes two pushes.
 
 ## License and credits
 
 Rings' own code is under the [MIT License](LICENSE).
 
-The app would be nothing without the work it stands on, above all **Plover** by the
-[Open Steno Project](https://www.openstenoproject.org/). Plover and most of its plugins are under the GNU General
-Public License, and they are packaged inside the APK. That means a built APK, as a whole, is distributed under the
-terms of the GPL (version 3 or later, once every bundled plugin is counted), with this repository as its source.
+Rings runs on Plover by the [Open Steno Project](https://www.openstenoproject.org/) and wouldn't exist without it.
+Plover and most of its plugins are under the GNU General Public License, and they're packaged inside the APK. So a
+built APK, as a whole, is distributed under the terms of the GPL (version 3 or later, once every bundled plugin is
+counted), with this repository as its source.
 
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) lists every bundled component with its author and license.
