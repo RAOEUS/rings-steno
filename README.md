@@ -5,9 +5,10 @@ your hands, with two thumbs or just one. Floating thumb sticks stand in for the 
 [Plover](https://www.openstenoproject.org/plover/) engine does the translating.
 
 <p align="center">
-  <img src="docs/screenshots/keyboard.png" width="250" alt="The Rings keyboard writing into another app, with both sticks open">
-  <img src="docs/screenshots/lesson.png" width="250" alt="A lesson showing which key to make and a picture of each stick">
-  <img src="docs/screenshots/settings.png" width="250" alt="The settings screen with sliders for every distance">
+  <img src="docs/screenshots/keyboard.png" width="200" alt="The Rings keyboard writing into another app, with both sticks open">
+  <img src="docs/screenshots/keyboard-one-thumb.png" width="200" alt="The keyboard in one-thumb mode: a single stick, swapped to the right keys">
+  <img src="docs/screenshots/lesson.png" width="200" alt="A lesson showing which key to make and a picture of each stick">
+  <img src="docs/screenshots/settings.png" width="200" alt="The settings screen, with the choice of one thumb or two and sliders for every distance">
 </p>
 
 ## Contents
