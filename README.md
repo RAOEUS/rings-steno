@@ -46,7 +46,8 @@ settings.
 - **Tap**: the stick's click, `S` on the left and `*` (undo) on the right.
 - **Roll**: slide from one key onto its neighbor to take both.
 - **Lift both thumbs**: after a short wait the stroke is sent.
-- **One thumb**: a single stick does both hands, and a tap swaps it between the left keys and the right.
+- **One thumb**: a single stick does both hands. A tap swaps it between the left keys and the right, and two taps
+  make `*`.
 
 A double tick means the push went long. A longer tick means the stroke was sent, and three ticks mean it had no
 entry.
@@ -85,7 +86,7 @@ You need an arm64 phone running Android 11 or later.
    [Development](#development)) and install it over USB:
 
    ```sh
-   adb install -r app/build/outputs/apk/release/rings-1.0.0-release.apk
+   adb install -r app/build/outputs/apk/release/rings-1.1.0-release.apk
    ```
 
 2. Open **Rings**. A banner offers to take you to the phone's keyboard settings. Switch **Rings steno** on there.
@@ -117,13 +118,15 @@ Choose **One** under Thumbs in Settings, or tap the two-ring button beside the k
 single stick you can land on anywhere.
 
 - Every stroke starts on the **left keys**.
-- A quick **tap** swaps the stick to the **right keys**, and another tap swaps it back.
+- A quick **tap** swaps the stick to the **right keys**.
+- A tap while you're on the right keys is `*`, and takes you back to the left. So **two taps make `*`** from either
+  side, and leave the stick where it was.
 - Two ticks say right, one says left, and the pad changes color with the side it's on.
 - Once the stroke is sent the stick is back on the left. If you tap and then wait, it stays swapped until you write
   the stroke.
 
-With one thumb, `S` and `*` are long pushes on the left keys (left and right), because the tap is busy swapping.
-The same button or setting takes you back to two thumbs.
+With one thumb, `S` is a long push left on the left keys, because the tap is busy swapping. `*` is there too, out to
+the right. The same button or setting takes you back to two thumbs.
 
 <br clear="right">
 
@@ -256,8 +259,8 @@ tests/                  Engine tests and an on-device check
 ### Build
 
 ```sh
-./gradlew assembleDebug        # app/build/outputs/apk/debug/rings-1.0.0-debug.apk
-./gradlew assembleRelease      # app/build/outputs/apk/release/rings-1.0.0-release.apk
+./gradlew assembleDebug        # app/build/outputs/apk/debug/rings-1.1.0-debug.apk
+./gradlew assembleRelease      # app/build/outputs/apk/release/rings-1.1.0-release.apk
 ```
 
 The debug build turns on WebView debugging so you can inspect the page over adb. The release build doesn't.

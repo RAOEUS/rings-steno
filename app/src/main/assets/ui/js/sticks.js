@@ -183,7 +183,9 @@ function drawMaps(side) {
     block +
     '</div><small>short push</small>' +
     (opt.hands === 1
-      ? '<small class="tap">tap = ' + (side === 'l' ? 'right keys' : 'left keys') + '</small>'
+      ? '<small class="tap">tap = ' +
+        (side === 'l' ? 'right keys' : (opt.tap ? '<b data-k="*">*</b> and ' : '') + 'left keys') +
+        '</small>'
       : opt.tap
         ? '<small class="tap">tap = <b data-k="' +
           (side === 'l' ? 'S-' : '*') +
@@ -209,7 +211,7 @@ var deck = $('deck'),
   hist = [],
   sendTimer = 0;
 // One thumb (opt.hands === 1): a single stick over the whole pad. It is on one hand's keys at a time, starts every
-// stroke on the left, and a quick tap swaps it to the other hand.
+// stroke on the left, and a quick tap swaps it to the other hand. A tap that leaves the right keys is also the star.
 var hand = 'l';
 function pending() {
   var m = 0;
@@ -435,8 +437,12 @@ function lift(e) {
   else if (!t.did && e.type === 'pointerup' && t.maxR < opt.tapr && performance.now() - t.t0 < opt.tapms) {
     // a quick tap. A rest, or a slide that never left the dead zone, is nothing
     if (opt.hands === 1) {
-      hand = hand === 'l' ? 'r' : 'l'; // one thumb: it swaps the stick to the other hand's keys
-      buzz(hand === 'r' ? [10, 40, 10] : 6); // two ticks: now on the right. One: back on the left
+      // one thumb: it swaps the stick to the other hand's keys. On the right keys it is also that stick's click, the
+      // star, as it is with two thumbs. So two taps make the star from either side and leave the stick where it was
+      var before = chord;
+      if (hand === 'r' && opt.tap) press(BIT['*']);
+      hand = hand === 'l' ? 'r' : 'l';
+      if (chord === before) buzz(hand === 'r' ? [10, 40, 10] : 6); // two ticks: now on the right. One: back on the left
     } else if (opt.tap) press(BIT[t.side === 'l' ? 'S-' : '*']); // two thumbs: it is the stick's click
   }
   delete touches[e.pointerId];

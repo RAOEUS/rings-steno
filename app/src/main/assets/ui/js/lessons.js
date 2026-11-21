@@ -74,7 +74,7 @@ var LESSONS = [
       'A quick tap, with no slide, is the middle of the stick: S on the left, the star on the right. The star on its own undoes your last stroke when you are writing.',
     keys: 'S * S *',
     introOne:
-      'With one thumb a tap swaps sides instead, so here S and the star are long pushes on the left keys: S out to the left, the star out to the right.',
+      'With one thumb a tap swaps sides, so here S is a long push out to the left on the left keys. The star is two taps: the first takes you to the right keys, the second is the star and brings you back. It is also a long push out to the right on the left keys.',
   },
   {
     name: 'Long pushes, left',
@@ -112,8 +112,8 @@ var LESSONS = [
     name: 'One thumb',
     one: true,
     intro:
-      'One thumb can do both hands. There is a single stick, and it starts every stroke on the left keys. A quick tap, with no slide, swaps it to the right keys, and another tap swaps it back. The pad changes colour with the side it is on, and the dot in the picture follows it: two ticks say right, one says left. When the stroke is sent the stick is back on the left. This lesson switches to one thumb while it runs; to stay that way, choose One under Thumbs in Settings or use the hand button beside the keyboard tape.',
-    keys: 'K -P T -L KA -B K-B TOP KAT RUG WEB',
+      'One thumb can do both hands. There is a single stick, and it starts every stroke on the left keys. A quick tap, with no slide, swaps it to the right keys. A tap while you are on the right keys is the star, and takes you back to the left: so two taps make the star wherever you are, and leave you where you were. The pad changes colour with the side it is on, and the dot in the picture follows it: two ticks say right, one says left. When the stroke is sent the stick is back on the left. This lesson switches to one thumb while it runs; to stay that way, choose One under Thumbs in Settings or use the hand button beside the keyboard tape.',
+    keys: 'K -P T -L * KA -B K-B KA* TOP KAT RUG WEB',
   },
   { name: 'Short words from your dictionaries', words: [1, 3] },
   { name: 'Longer words from your dictionaries', words: [4, 99] },
@@ -400,7 +400,14 @@ function renderCalib() {
 // how to make a key, in words, for the way the sticks are set up now
 function howTo(k) {
   if (opt.hands !== 1) return HOW[k];
-  var text = k === 'S-' ? 'left thumb, long push left' : k === '*' ? 'left thumb, long push right' : HOW[k];
+  var text =
+    k === 'S-'
+      ? 'left thumb, long push left'
+      : k !== '*'
+        ? HOW[k]
+        : opt.tap
+          ? 'tap twice'
+          : 'left thumb, long push right';
   return text.replace('left thumb', 'left keys').replace('right thumb', 'right keys (tap to swap)');
 }
 function renderLesson() {

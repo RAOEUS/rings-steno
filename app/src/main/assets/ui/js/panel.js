@@ -15,7 +15,7 @@ function doAct(what) {
     opt.hands = opt.hands === 1 ? 2 : 1;
     saveMeta();
     applyOpts();
-    toast(opt.hands === 1 ? 'One thumb: a tap swaps between the left keys and the right' : 'Two thumbs');
+    toast(opt.hands === 1 ? 'One thumb: a tap swaps between the left keys and the right. Two taps make *' : 'Two thumbs');
   } else if (what === 'setup') {
     if ($('setup').dataset.s === 'off') NATIVE.keyboardSettings();
     else NATIVE.pickKeyboard();
