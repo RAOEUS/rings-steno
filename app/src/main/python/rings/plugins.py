@@ -10,6 +10,9 @@ from . import core
 # and no desktop to draw on.
 KINDS = ('command', 'dictionary', 'extension', 'macro', 'meta', 'system')
 PROTECTED = ('plover', 'plover-stroke', 'rtf-tokenize', 'appdirs', 'pyserial')      # what the engine itself stands on
+# ...and the modules those are made of. Added plugins are found first, so one carrying a module by any of these names
+# would quietly take the place of part of the engine or of this package.
+PROTECTED_MODULES = ('plover', 'plover_stroke', '_plover_stroke', 'rtf_tokenize', 'appdirs', 'serial', 'rings')
 
 
 def folder():
@@ -84,6 +87,9 @@ def install_wheel(filename, data):
         name = next((l.split(':', 1)[1].strip() for l in z.read(meta).decode('utf-8', 'replace').splitlines() if l.lower().startswith('name:')), filename)
         if name.lower().replace('_', '-') in PROTECTED:
             raise ValueError('%s is part of the engine and cannot be replaced from here' % name)
+        tops = {n.replace('\\', '/').split('/')[0].split('.')[0] for n in names}
+        if tops & set(PROTECTED_MODULES):
+            raise ValueError('%s carries a module named like part of the engine (%s) and was not added' % (name, ', '.join(sorted(tops & set(PROTECTED_MODULES)))))
         if any(n.lower().endswith(('.so', '.pyd', '.dylib', '.dll')) for n in names):
             raise ValueError('%s contains compiled code built for another kind of device. Only pure Python plugins can be added.' % name)
         if any(n.startswith(('/', '\\')) or '..' in n.replace('\\', '/').split('/') for n in names):

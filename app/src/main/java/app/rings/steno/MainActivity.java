@@ -1,6 +1,7 @@
 package app.rings.steno;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -30,6 +31,7 @@ public class MainActivity extends Activity {
     static final String PANEL = "panel";
 
     private static final int PICK_FILES = 1;
+    private static final int MAX_FILE_BYTES = 64 << 20;
     private WebView web;
     private ValueCallback<Uri[]> picking;
 
@@ -83,7 +85,7 @@ public class MainActivity extends Activity {
     private void handle(Intent intent) {
         if (intent == null) return;
         String panel = intent.getStringExtra(PANEL);
-        if (panel != null && !panel.isEmpty()) web.loadUrl(Page.URL + "#" + panel);      // the page opens it once it is up
+        if ("settings".equals(panel) || "library".equals(panel)) web.loadUrl(Page.URL + "#" + panel);      // the page opens it once it is up
 
         List<Uri> files = new ArrayList<>();
         String action = intent.getAction();
@@ -91,8 +93,32 @@ public class MainActivity extends Activity {
         if (Intent.ACTION_SEND.equals(action) && intent.getParcelableExtra(Intent.EXTRA_STREAM) != null) files.add(intent.getParcelableExtra(Intent.EXTRA_STREAM));
         if (Intent.ACTION_SEND_MULTIPLE.equals(action) && intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM) != null) files.addAll(intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM));
         if (files.isEmpty()) return;
-        setIntent(new Intent(this, MainActivity.class));      // handled: do not add them again if the screen is rebuilt
-        new Thread(() -> addFiles(files), "add-files").start();
+        setIntent(new Intent(this, MainActivity.class));      // handled: do not ask again if the screen is rebuilt
+        confirm(files);
+    }
+
+    /**
+     * Any app can send files here, and a Python dictionary or a plugin is code that would run inside the keyboard. So
+     * nothing that arrives from outside is added until the person holding the phone has seen what it is and said yes.
+     */
+    private void confirm(List<Uri> files) {
+        StringBuilder names = new StringBuilder();
+        boolean code = false;
+        for (Uri uri : files) {
+            String name = nameOf(uri);
+            names.append("\n\u2022 ").append(name);
+            String lower = name.toLowerCase();
+            code |= lower.endsWith(".py") || lower.endsWith(".whl") || lower.endsWith(".zip");
+        }
+        String message = "Another app sent this to Rings:" + names
+            + (code ? "\n\nPython dictionaries and plugins run as code inside Rings, which sees everything you write. Add them only if you trust where they came from." : "");
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle("Add to your dictionaries?")
+            .setMessage(message)
+            .setPositiveButton("Add", (d, which) -> new Thread(() -> addFiles(files), "add-files").start())
+            .setNegativeButton("Cancel", null)
+            .show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setFilterTouchesWhenObscured(true);      // no tapping it through another app's overlay
     }
 
     /** Files shared to Rings or opened with it go to Plover the same way the page's Add files button sends them. */
@@ -103,7 +129,10 @@ public class MainActivity extends Activity {
             try (InputStream in = getContentResolver().openInputStream(uri)) {
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 byte[] buffer = new byte[65536];
-                for (int n; (n = in.read(buffer)) > 0; ) bytes.write(buffer, 0, n);
+                for (int n; (n = in.read(buffer)) > 0; ) {
+                    bytes.write(buffer, 0, n);
+                    if (bytes.size() > MAX_FILE_BYTES) throw new java.io.IOException("too large");
+                }
                 list.put(new JSONArray().put(nameOf(uri)).put(Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP)));
             } catch (Exception e) {
                 problem = "Could not read " + nameOf(uri) + ".";

@@ -182,7 +182,14 @@ function tapeLine(mask) {
   for (var i = 0; i < KEYS.length; i++) s += mask & (1 << i) ? KEYS[i].replace('-', '') : ' ';
   return s;
 }
+var secret = false; // the keyboard is writing into a password box: show nothing of what is written
 function renderTape(liveMask) {
+  if (secret) {
+    $('tape').innerHTML = '<div class="trow head"><span class="st">hidden while you write a password</span></div>';
+    $('toast').textContent = '';
+    pvShown = false;
+    return;
+  }
   var rows = tape.slice(-(liveMask ? Math.max(1, opt.tape - 1) : opt.tape)),
     html =
       '<div class="trow head"><span class="st">' +
@@ -288,7 +295,7 @@ function send(mask) {
   if (!undo && r.last && r.last.english === null) buzz([30, 50, 30, 50, 30]); // no entry: three ticks, so a miss is felt without looking
   renderTape(0);
   renderPage();
-  if (r.brief && opt.brief && !toastOn) {
+  if (r.brief && opt.brief && !toastOn && !secret) {
     var line = $('toast');
     line.textContent = 'shorter: ' + r.brief;
     line.className = 'toast pre';

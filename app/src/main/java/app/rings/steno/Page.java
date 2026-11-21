@@ -4,8 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 /** The interface: one web page (src/main/assets/ui), shown whole on the app screen and as tape and pad in the keyboard. */
 final class Page {
@@ -23,7 +25,8 @@ final class Page {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);      // the page keeps the settings in IndexedDB
-        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccess(false);         // the page's own files are app assets, which stay readable; nothing else on disk is
+        settings.setAllowContentAccess(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setTextZoom(100);
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
@@ -33,6 +36,12 @@ final class Page {
         web.setOnLongClickListener(v -> true);      // no text-selection popups over the sticks
         if (keyboard != null) web.setBackgroundColor(Color.TRANSPARENT);      // the app shows through above the keyboard
 
+        // The bridge can install dictionaries and plugins, so only this page may ever hold it: the view goes nowhere else.
+        web.setWebViewClient(new WebViewClient() {
+            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return !request.getUrl().toString().startsWith(URL);
+            }
+        });
         web.addJavascriptInterface(new Bridge(context, web, keyboard), "RingsNative");
         web.loadUrl(URL);
         return web;

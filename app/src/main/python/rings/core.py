@@ -105,7 +105,8 @@ def start():
     except Exception:
         log.error('loading the configuration failed, starting from defaults', exc_info=True)
         config.clear()
-    config.update(machine_type='Rings', auto_start=True)
+    # A keyboard sees passwords. Plover can log every stroke and translation to a file; here it never does.
+    config.update(machine_type='Rings', auto_start=True, enable_stroke_logging=False, enable_translation_logging=False)
     # Lapwing's movement dictionary only works with the modal dictionary plugin's extension running, which desktop
     # Plover leaves for you to tick in its settings. Switch it on once; after that the choice is yours.
     marker = os.path.join(CONFIG_DIR, 'rings-extensions-set')

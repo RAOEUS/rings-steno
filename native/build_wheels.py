@@ -14,7 +14,9 @@ import base64, glob, hashlib, os, subprocess, sys, tarfile, tempfile, zipfile
 
 PY = '3.11'                       # must match the python version in app/build.gradle
 ABI, TRIPLE, API = 'arm64-v8a', 'aarch64-linux-android', 24
-PACKAGES = [('plover_stroke', '1.1.0', '_plover_stroke', ['plover_stroke.py']), ('rtf_tokenize', '1.0.1', 'rtf_tokenize', [])]
+# name, version, C module, pure files to ship beside it, sha256 of the source release on PyPI
+PACKAGES = [('plover_stroke', '1.1.0', '_plover_stroke', ['plover_stroke.py'], 'de03b23f4aee66b65f69f7d4ecc4233681b43541502d86bf14fde29eaa72d153'),
+            ('rtf_tokenize', '1.0.1', 'rtf_tokenize', [], '9020aa801502b5de60be2b7709b9ce4cb29cd70df6f5fc4953315cf158035ad2')]
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'wheels')
 
@@ -47,9 +49,12 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as work:
         include, libdir = target(work)
-        for name, version, module, extra in PACKAGES:
+        for name, version, module, extra, sha256 in PACKAGES:
             subprocess.check_call([sys.executable, '-m', 'pip', 'download', '-q', '--no-deps', '--no-binary', ':all:', '-d', work, '%s==%s' % (name, version)])
-            with tarfile.open(os.path.join(work, '%s-%s.tar.gz' % (name, version))) as t:
+            sdist = os.path.join(work, '%s-%s.tar.gz' % (name, version))
+            if hashlib.sha256(open(sdist, 'rb').read()).hexdigest() != sha256:
+                sys.exit('%s %s is not the source release this script was written against: refusing to build it' % (name, version))
+            with tarfile.open(sdist) as t:
                 t.extractall(work)
             src = os.path.join(work, '%s-%s' % (name, version))
             so = os.path.join(work, module + '.so')

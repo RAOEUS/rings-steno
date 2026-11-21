@@ -8,6 +8,7 @@ import zipfile
 from . import core, plugins, status
 
 DICT_EXT = ('.json', '.py', '.modal', '.rtf')
+MAX_UNPACKED = 256 << 20      # a zip that would unpack to more than this is refused rather than left to fill the phone
 
 
 def set_system(name):
@@ -44,6 +45,8 @@ def add_files(files):
                 continue
         if name.lower().endswith(('.zip', '.whl')):
             with zipfile.ZipFile(io.BytesIO(data)) as z:
+                if sum(info.file_size for info in z.infolist()) > MAX_UNPACKED:
+                    raise ValueError('%s unpacks to more than this app will take' % name)
                 for info in z.infolist():
                     if not info.is_dir():
                         put(info.filename, z.read(info))

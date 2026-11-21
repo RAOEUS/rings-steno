@@ -57,8 +57,11 @@ window.__rings = {
       });
   },
   // a new place to write, or the cursor was moved by hand. attach: no space wanted before the next word. caps: the box wants a capital here
-  field: function (attach, caps) {
+  // secret: it is a password box
+  field: function (attach, caps, hidden) {
     pvMask = -1;
+    secret = !!hidden;
+    renderTape(0);
     if (ready && !panel)
       try {
         ask('reset', attach, caps && !!opt.cap);

@@ -2,6 +2,7 @@ package app.rings.steno;
 
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
+import android.text.InputType;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -109,7 +110,15 @@ public class RingsIme extends InputMethodService implements KeyboardHost {
         boolean attach = before == null || before.length() == 0 || Character.isWhitespace(before.charAt(0));
         boolean capital = ic != null && info != null && ic.getCursorCapsMode(info.inputType) != 0;
         editor.forgetCursor();
-        Page.tell(web, "field(" + attach + "," + capital + ")");
+        Page.tell(web, "field(" + attach + "," + capital + "," + isPassword(info) + ")");
+    }
+
+    /** In a password box the tape shows nothing of what is written. */
+    private static boolean isPassword(EditorInfo info) {
+        if (info == null) return false;
+        int kind = info.inputType & InputType.TYPE_MASK_CLASS, variation = info.inputType & InputType.TYPE_MASK_VARIATION;
+        return (kind == InputType.TYPE_CLASS_TEXT && (variation == InputType.TYPE_TEXT_VARIATION_PASSWORD || variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))
+            || (kind == InputType.TYPE_CLASS_NUMBER && variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD);
     }
 
     @Override public int navInsetCss() {
