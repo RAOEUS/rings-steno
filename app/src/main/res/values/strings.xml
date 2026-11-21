@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app">Rings</string>
+    <string name="keyboard">Rings steno</string>
+    <string name="add">Add to Rings dictionaries</string>
+</resources>
