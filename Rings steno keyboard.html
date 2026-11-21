@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rings steno keyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a steno pad. Ruled paper for the transcript, a strip of paper tape printing each stroke in
+   steno order, and below it two open pads where a ring of keys blooms under each thumb. */
+:root {
+  --paper: #EEF2E3;      /* green-tint steno paper */
+  --deck: #DDE4CE;       /* pad surface */
+  --ink: #1F2147;        /* writing ink */
+  --ink-soft: #5D6080;   /* secondary text */
+  --left: #4A3FD0;       /* left bank */
+  --right: #0B7A68;      /* right bank */
+  --rule: #C8323C;       /* red rule of a steno pad; errors */
+  --key: #F6F8EE;        /* raised surfaces */
+  --line: rgba(31, 33, 71, .11);
+  --shade: rgba(31, 33, 71, .16);
+  --font-ui: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-type: "Courier Prime", "Courier New", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15172B; --deck: #1D2040; --ink: #E7EBDB; --ink-soft: #9CA1C0; --left: #A39BFF; --right: #4FD1B5; --rule: #FF6B74; --key: #2A2E57;
+    --line: rgba(231, 235, 219, .12); --shade: rgba(0, 0, 0, .45); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15172B; --deck: #1D2040; --ink: #E7EBDB; --ink-soft: #9CA1C0; --left: #A39BFF; --right: #4FD1B5; --rule: #FF6B74; --key: #2A2E57;
+  --line: rgba(231, 235, 219, .12); --shade: rgba(0, 0, 0, .45); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-ui); overflow: hidden; overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--right); outline-offset: 2px; border-radius: 8px; }
+.app { height: 100%; max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
+
+.bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px 6px 16px; }
+.mark { font-weight: 800; font-size: 20px; letter-spacing: -.02em; margin-right: auto; }
+.sys { white-space: nowrap; height: 34px; padding: 0 12px; border-radius: 99px; background: var(--ink); color: var(--paper); font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.sys small { font-weight: 400; opacity: .75; font-size: 12px; }
+.tool { min-width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: var(--ink-soft); }
+.tool svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tool:active { background: var(--line); }
+
+.page { margin: 0 16px; overflow-y: auto; font-family: var(--font-type); font-size: 20px; line-height: 30px; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 2px;
+  background-image: linear-gradient(to bottom, transparent 29px, var(--line) 29px); background-size: 100% 30px; background-attachment: local; }
+.page .coach { font-family: var(--font-ui); font-size: 15px; color: var(--ink-soft); white-space: normal; }
+.page .sel { background: color-mix(in srgb, var(--right) 30%, transparent); }
+.caret { display: inline-block; width: 2px; height: 21px; margin: 0 -1px; vertical-align: -4px; background: var(--rule); animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.tape { margin: 6px 16px 8px; padding: 6px 10px; border-radius: 10px; background: var(--key); border-left: 3px solid var(--rule); font-family: var(--font-type); font-size: 14px; line-height: 19px; min-height: 50px; display: flex; flex-direction: column; justify-content: flex-end; }
+.trow { display: flex; gap: 10px; white-space: pre; color: var(--ink-soft); }
+.trow .st { letter-spacing: .09em; flex: none; }
+.trow .tr { overflow: hidden; text-overflow: ellipsis; font-family: var(--font-ui); font-size: 13px; }
+.trow:last-child { color: var(--ink); font-weight: 700; }
+.trow.head, .trow.head:last-child { color: color-mix(in srgb, var(--ink-soft) 55%, transparent); font-weight: 400; }
+.trow.live { color: var(--rule); }
+.trow .u { color: var(--rule); }
+.toast { font-family: var(--font-ui); font-size: 12.5px; color: var(--ink-soft); min-height: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toast.bad { color: var(--rule); font-weight: 600; white-space: normal; }
+
+.foot { touch-action: none; position: relative; z-index: 5; }
+.deck { position: relative; height: var(--deckh, 124px); max-height: 62vh; background: var(--deck); border-radius: 24px 24px 0 0; touch-action: none; box-shadow: 0 -1px 0 var(--line); }
+.deck::before { content: ""; position: absolute; left: 50%; top: 12px; bottom: 12px; width: 1px; background: var(--line); }
+.maps { position: absolute; top: 0; bottom: env(safe-area-inset-bottom, 0px); width: 50%; display: flex; align-items: center; justify-content: center; gap: 18px; pointer-events: none; --hand: var(--left); }
+.maps.l { left: 0; } .maps.r { right: 0; --hand: var(--right); }
+.map { display: grid; grid-template-columns: repeat(3, 24px); grid-auto-rows: 23px; justify-items: center; align-items: center; font-weight: 800; font-size: 15px; color: var(--hand); line-height: 1; }
+.map span { min-width: 20px; height: 18px; border-radius: 9px; display: grid; place-items: center; }
+.map span.v { color: var(--ink); opacity: .8; } .map span.c { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+.map span.on { background: var(--hand); color: var(--paper); opacity: 1; }
+.map figcaption, .mapwrap small { grid-column: 1 / -1; }
+.mapwrap { display: grid; justify-items: center; gap: 4px; transition: opacity .12s; } .maps .two, .maps.second .one { opacity: .42; } .maps.second .two { opacity: 1; }
+.map.wide { grid-template-columns: 24px 10px 24px; } .mapwrap small { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+.nohints .maps, .maps.hide { visibility: hidden; }
+.arpbar { display: none; position: absolute; left: 0; right: 0; top: 8px; justify-content: center; align-items: center; gap: 10px; z-index: 1; pointer-events: none; font-size: 12px; color: var(--ink-soft); }
+.arpbar button { pointer-events: auto; height: 30px; padding: 0 14px; border-radius: 99px; background: var(--ink); color: var(--paper); font-weight: 600; font-size: 13px; }
+.arpbar button.go { background: var(--right); padding: 0 22px; }
+.arpbar button:disabled { opacity: .3; }
+.arp .arpbar { display: flex; } .arp .maps { top: 34px; }
+.ring.live { z-index: 2; }
+.ring { position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none; transition: opacity .15s; }
+.ring svg { position: absolute; left: -150px; top: -150px; width: 300px; height: 300px; overflow: visible; }
+.ring .inner { fill: color-mix(in srgb, var(--hand) 13%, var(--deck)); stroke: color-mix(in srgb, var(--hand) 40%, transparent); stroke-width: 1; }
+.ring .dead { fill: var(--deck); stroke: color-mix(in srgb, var(--hand) 40%, transparent); stroke-width: 1; }
+.ring .spoke { stroke: color-mix(in srgb, var(--hand) 22%, transparent); stroke-width: 1; }
+.ring text { font-family: var(--font-ui); font-weight: 800; font-size: 19px; fill: var(--hand); text-anchor: middle; dominant-baseline: central; }
+.ring text.hub { font-size: 14px; fill: var(--ink-soft); }
+.ring text.on { fill: var(--paper); } .ring text.hub.on { fill: var(--hand); font-size: 19px; }
+.ring circle.lit { fill: var(--hand); opacity: 0; }
+.ring circle.lit.on { opacity: 1; }
+.ring.l { --hand: var(--left); } .ring.r { --hand: var(--right); }
+.ring.live { opacity: 0; } .ring.live.show { opacity: 1; }
+.ring text.vow { fill: var(--ink); opacity: .8; } .ring text.vow.on { fill: var(--paper); opacity: 1; }
+.ring .inner.two { fill: color-mix(in srgb, var(--hand) 22%, var(--deck)); stroke: var(--hand); stroke-width: 1.5; }
+.ring .g2 { display: none; } .ring.hold .g1 { display: none; } .ring.hold .g2 { display: inline; }
+.nohints .ring text { visibility: hidden; }
+.loading { border-radius: inherit; position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; background: var(--deck); font-size: 15px; color: var(--ink-soft); z-index: 3; }
+.loading b { display: block; color: var(--ink); font-size: 18px; margin-bottom: 4px; }
+
+.scrim { position: fixed; inset: 0; z-index: 30; background: color-mix(in srgb, var(--ink) 40%, transparent); display: none; align-items: flex-end; justify-content: center; }
+.scrim.show { display: flex; }
+.panel { width: 100%; max-width: 640px; max-height: 90%; overflow-y: auto; background: var(--paper); border-radius: 24px 24px 0 0; padding: 20px 20px 28px; }
+.panel h2 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 4px; text-wrap: balance; }
+.panel .lead { margin: 0 0 14px; color: var(--ink-soft); font-size: 15px; line-height: 1.45; max-width: 62ch; }
+.panel h3 { font-size: 14px; font-weight: 800; margin: 18px 0 8px; }
+.panel a { color: var(--right); font-weight: 600; }
+.panel .close { position: sticky; top: 0; float: right; width: 38px; height: 38px; border-radius: 50%; background: var(--deck); display: grid; place-items: center; font-size: 18px; font-weight: 600; z-index: 1; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; } .seg button { padding: 9px 14px; border-radius: 10px; background: var(--deck); font-weight: 600; font-size: 13.5px; } .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.dict { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.dict .nm { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dict .meta { grid-column: 2; font-size: 12px; color: var(--ink-soft); }
+.dict .meta.bad { color: var(--rule); }
+.dict .ord { display: flex; gap: 2px; grid-row: span 2; }
+.dict .ord button { width: 32px; height: 32px; border-radius: 8px; background: var(--deck); font-size: 14px; }
+.dict.off .nm { color: var(--ink-soft); text-decoration: line-through; }
+.tog { appearance: none; -webkit-appearance: none; width: 42px; height: 26px; border-radius: 99px; background: var(--line); position: relative; margin: 0; cursor: pointer; grid-row: span 2; }
+.tog::after { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 3px var(--shade); transition: transform .15s; }
+.tog:checked { background: var(--right); } .tog:checked::after { transform: translateX(16px); }
+.plain { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.plain button, .plain label { padding: 10px 16px; border-radius: 12px; background: var(--deck); font-weight: 600; font-size: 14px; cursor: pointer; }
+.plain .go { background: var(--right); color: var(--paper); }
+.filebtn { position: relative; overflow: hidden; padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; display: inline-block; }
+.filebtn input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 80px; }
+.status { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--right); min-height: 20px; } .status.bad { color: var(--rule); } .plain .danger { color: var(--rule); }
+.steps { margin: 0; padding-left: 20px; font-size: 14.5px; line-height: 1.5; } .steps li { margin-bottom: 4px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; clear: both; }
+.switch .tog { flex: none; }
+.switch.pick { display: block; } .switch.pick .seg { margin-top: 9px; flex-wrap: nowrap; } .switch.pick .seg button { flex: 1; }
+.switch small { display: block; color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+.field { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 8px; }
+.field input, .lookup input { min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: var(--key); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; -webkit-user-select: text; user-select: text; }
+.field button { padding: 0 16px; border-radius: 10px; background: var(--right); color: var(--paper); font-weight: 600; }
+.lookup input { width: 100%; }
+.hits { font-family: var(--font-type); font-size: 15px; line-height: 1.6; margin-top: 8px; } .hits small { font-family: var(--font-ui); color: var(--ink-soft); font-size: 12px; }
+.moves { display: grid; grid-template-columns: auto 1fr; gap: 9px 14px; align-items: start; font-size: 14.5px; line-height: 1.4; margin: 0; }
+.moves dt { font-weight: 800; font-size: 13px; padding: 3px 9px; border-radius: 8px; background: var(--deck); white-space: nowrap; text-align: center; }
+.moves dd { margin: 0; }
+@media (max-height: 560px) { .tape { min-height: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } .ring { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <div class="mark">Rings</div>
+    <button class="sys" id="btnSys" aria-label="Dictionaries and system"><span id="sysName">Lapwing</span><small id="sysCount"></small></button>
+    <button class="tool" id="btnLookup" aria-label="Look up a word" title="Look up"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+    <button class="tool" id="btnCopy" aria-label="Copy text" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-1a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h1"/></svg></button>
+    <button class="tool" id="btnGuide" aria-label="How it works" title="How it works"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.5-1.2 1-1.2 2"/><circle cx="12" cy="16.9" r=".6"/></svg></button>
+    <button class="tool" id="btnSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg></button>
+  </header>
+  <main class="page" id="page" aria-live="polite"></main>
+  <div class="foot" id="foot">
+  <div class="tape" id="tapeBox"><div id="tape"></div><div class="toast" id="toast"></div></div>
+  <section class="deck" id="deck" aria-label="Thumb sticks">
+    <div class="ring live l" id="ringL"></div><div class="ring live r" id="ringR"></div>
+    <div class="arpbar"><button data-arp="back" id="arpBack">Back</button><button data-arp="send" id="arpSend" class="go">Send</button><button data-arp="clear" id="arpClear">Clear</button></div>
+    <div class="maps l" id="mapsL"></div><div class="maps r" id="mapsR"></div>
+    <div class="loading" id="loading"><div><b>Opening your dictionaries</b>One moment</div></div>
+  </section>
+  </div>
+</div>
+
+<div class="scrim" id="library" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="libTitle">Dictionaries</h2>
+    <p class="lead">Each system keeps its own stack. The top dictionary wins, as in Plover.</p>
+    <div class="seg" id="sysSeg"><button data-sys="Lapwing">Lapwing</button><button data-sys="English Stenotype">Plover (English Stenotype)</button></div>
+    <div id="dictList"></div>
+    <div id="libEmpty"></div>
+    <div class="plain">
+      <span class="filebtn go">Add files<input type="file" id="fileIn" multiple aria-label="Add dictionary files"></span>
+      <button id="btnAddTr">Add a translation</button>
+      <button id="btnExport">Copy user.json</button>
+    </div>
+    <p class="status" id="libStatus" aria-live="polite"></p>
+    <div id="addTr" hidden>
+      <div class="field"><input id="trOutline" placeholder="outline, e.g. KAT" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Outline"><input id="trText" placeholder="translation" autocomplete="off" aria-label="Translation"><button id="trSave">Save</button></div>
+    </div>
+    <p class="lead" id="libNote" style="margin-top:14px"></p>
+  </div>
+</div>
+
+<div class="scrim" id="lookupP" role="dialog" aria-modal="true" aria-labelledby="lkTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="lkTitle">Look up</h2>
+    <p class="lead">Type a word or phrase to see how to stroke it with the dictionaries that are switched on.</p>
+    <div class="lookup"><input id="lkIn" placeholder="word or phrase" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Word to look up"></div>
+    <div class="hits" id="lkOut"></div>
+  </div>
+</div>
+
+<div class="scrim" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="guideTitle">A steno board for two thumbs</h2>
+    <p class="lead">Each thumb has one stick. It opens wherever that thumb lands on its half, so there is nothing to aim at. The directions are the board itself: push toward where the key sits. Keys add up until the stroke is sent, a moment after both thumbs are off the glass. That is the only clock: how long a thumb rests never changes what its push means.</p>
+    <dl class="moves">
+      <dt>push</dt><dd>Your hand's block of six, as on the board: T P H over K W R on the left, -F -P -L over -R -B -G on the right. Push toward a key and lift. Push again for another key from the block.</dd>
+      <dt>tap, then push</dt><dd>A tap sends your next push to the keys around that block, where the board has them. Left: the number bar above, S- to the left, * to the right, A and O underneath. Right: -T and -D above, -S left and -Z right, E and U underneath. Straight down is both vowels. Two ticks tell you the tap landed. After that push the stick is back on the block. Any touch that lifts without a push is a tap, however long it rests.</dd>
+      <dt>tap twice</dt><dd>The stick's click: S- on the left, * on the right. Two taps on the right undo the last stroke. A longer tick tells you each stroke has gone and the next can start.</dd>
+    </dl>
+    <h3>More than one key from the block</h3>
+    <dl class="moves">
+      <dt>one by one</dt><dd>Push, lift, push again. Each push adds its key, so the rolls below are shortcuts you can leave for later.</dd>
+      <dt>neighbours</dt><dd>Roll from one key onto the next and you get both. The same goes for the keys around the block: -T rolled across to -D, A down round to O.</dd>
+      <dt>skip</dt><dd>Roll across three or more. Forward in steno order, say T round to H, keeps every key. Backward, H round to T, keeps only the two ends.</dd>
+      <dt>drop one</dt><dd>After a roll, back up one step. The key you stop on is dropped: T, P, H, then back to P, is TH.</dd>
+      <dt>or two trips</dt><dd>Without lifting, come back to the centre and push out again.</dd>
+    </dl>
+    <h3>Arpeggiate, for learning</h3>
+    <p class="lead">Switch it on in Settings and the clock stops. Each push adds its keys and they stay down while you find the next one. A push goes to the block, a tap and then a push goes to the keys around it, and pushing a key that is already down takes it out. Back undoes your last push and Clear empties the stroke, so a slip never has to be sent. Press Send when the stroke is right, the way the space bar does in Plover's arpeggiate. Two taps are the sticks' clicks as usual: S- on the left, * on the right, so two right taps and Send undoes the last stroke.</p>
+    <p class="lead" style="margin-top:12px">The block sticks are plover_controller's, with every path of its default mapping unchanged. KAT is a push down-left for K, a tap and another push down-left for A, and on the right a tap and a push up-left for -T. The tape shows the stroke you are building in red.</p>
+    <h3>What works like Plover</h3>
+    <p class="lead">Translation, undo, suffix folding, spelling rules, modes, retro commands, modal dictionaries, stitching and the Lapwing number key behave as in Plover: this engine was checked against Plover itself on tens of thousands of stroke sequences. Key commands such as arrows, Return and BackSpace act on the text on this page. The four Python dictionaries that come with Lapwing run as built-in ports, checked against the originals on every possible stroke. Any other .py file runs in a Python runtime that downloads the first time it is needed.</p>
+    <p class="lead">The engine is a JavaScript port of the translation and formatting code of Plover by the Open Steno Project, with the behaviour of the modal-dictionary, stitching and last-translation plugins, and is offered under the same GPL-2.0-or-later licence. The stick paths are the default mapping of plover_controller by Tadeo Kondrak and contributors (GPL-2.0). Word dictionaries are never bundled: they come from the files you add, and stay in this browser. The built-in ports carry the tables of jeff-phrasing by Jeff Wu, emily-symbols and emily-modifiers by EPLHREU, and abby-left-hand-modifiers by Abkwreu, as packaged in plover-lapwing-aio.</p>
+  </div>
+</div>
+
+<div class="scrim" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="setTitle">Settings</h2>
+    <label class="switch" for="optArp"><span>Arpeggiate<small>For learning. Build a stroke one key at a time with no clock running, then press Send.</small></span><input type="checkbox" class="tog" id="optArp"></label>
+    <div class="switch pick"><span>Pad height<small>The sticks open wherever you land, so the pad can be a thin strip. Pushes may run off its edge.</small></span><span class="seg" id="tallSeg"><button data-t="s">Slim</button><button data-t="m">Medium</button><button data-t="l">Tall</button></span></div>
+    <div class="switch pick"><span>Travel<small>How far a thumb moves before a push counts.</small></span><span class="seg" id="sizeSeg"><button data-size="s">Small</button><button data-size="m">Medium</button><button data-size="l">Large</button></span></div>
+    <div class="switch pick"><span>Wait before sending<small>How long you get to land a thumb again once both are off the glass.</small></span><span class="seg" id="graceSeg"><button data-g="130">Short</button><button data-g="260">Medium</button><button data-g="450">Long</button></span></div>
+    <label class="switch" for="optHints"><span>Show the letters<small>Turn off once the sticks are in your thumbs.</small></span><input type="checkbox" class="tog" id="optHints" checked></label>
+    <label class="switch" for="optTap"><span>Tap twice for S- and *<small>Like clicking the sticks. Both keys also sit beside the left block.</small></span><input type="checkbox" class="tog" id="optTap" checked></label>
+    <label class="switch" for="optBuzz"><span>Vibration<small>A tick for each key, two for a tap, a longer one when the stroke is sent. Android only.</small></span><input type="checkbox" class="tog" id="optBuzz" checked></label>
+    <label class="switch" for="optCap"><span>Start with a capital<small>Capitalise the first word on a clear page.</small></span><input type="checkbox" class="tog" id="optCap"></label>
+    <div class="plain"><button id="btnClear" class="danger">Clear the page</button></div>
+  </div>
+</div>
+
+<script>
+/* Steno engine for the rings keyboard.
+   A JavaScript port of the translation and formatting pipeline of Plover (Open Steno Project,
+   GPL-2.0-or-later): strokes, dictionary stack, longest-match translation, undo, macros, and the
+   formatter with its metas. Also ports the small Lapwing companion plugins: modal dictionaries,
+   stitching, last-translation macros. Behaviour is checked against Plover itself in tests.
+   No DOM in here. */
+(function (root) {
+  'use strict';
+
+  /* ---------------- systems ---------------- */
+  var KEYS = ['#', 'S-', 'T-', 'K-', 'P-', 'W-', 'H-', 'R-', 'A-', 'O-', '*', '-E', '-U', '-F', '-R', '-P', '-B', '-L', '-G', '-T', '-S', '-D', '-Z'];
+  var RULES = [["^(.*[aeiou]c) \\^ ly$", "\\1ally"], ["^(.+[aeioubmnp])le \\^ ly$", "\\1ly"], ["^(.*t)e \\^ (ry|ary)$", "\\1ory"], ["^(.+)m \\^ tor(y|ily)$", "\\1mator\\2"], ["^(.+)se \\^ ar(y|ies)$", "\\1sor\\2"], ["^(.*[naeiou])te? \\^ cy$", "\\1cy"], ["^(.*(?:s|sh|x|z|zh)) \\^ s$", "\\1es"], ["^(.*(?:oa|ea|i|ee|oo|au|ou|l|n|(?<![gin]a)r|t)ch) \\^ s$", "\\1es"], ["^(.+[bcdfghjklmnpqrstvwxz])y \\^ s$", "\\1ies"], ["^(.+)ie \\^ ing$", "\\1ying"], ["^(.+[cdfghlmnpr])y \\^ ist$", "\\1ist"], ["^(.+[bcdfghjklmnpqrstvwxz])y \\^ ([a-hj-xz].*)$", "\\1i\\2"], ["^(.+)te \\^ en$", "\\1tten"], ["^(.+[ae]) \\^ e(n|ns)$", "\\1\\2"], ["^(.+)y \\^ (ial|ially)$", "\\1\\2"], ["^(.+i) \\^ if(y|ying|ied|ies|ication|ications)$", "\\1f\\2"], ["^(.*[^aeiou])y \\^ if(y|ying|ied|ies|ication|ications)$", "\\1if\\2"], ["^(.+)ic \\^ (ical|ically)$", "\\1\\2"], ["^(.+)ology \\^ ic(al|ally)$", "\\1ologic\\2"], ["^(.*)ry \\^ ica(l|lly|lity)$", "\\1rica\\2"], ["^(.*[l]) \\^ is(t|ts)$", "\\1is\\2"], ["^(.*)ry \\^ ity$", "\\1rity"], ["^(.*)l \\^ ity$", "\\1lity"], ["^(.+)rm \\^ tiv(e|ity|ities)$", "\\1rmativ\\2"], ["^(.+)e \\^ tiv(e|ity|ities)$", "\\1ativ\\2"], ["^(.+)y \\^ iz(e|es|ing|ed|er|ers|ation|ations|able|ability)$", "\\1iz\\2"], ["^(.+)y \\^ is(e|es|ing|ed|er|ers|ation|ations|able|ability)$", "\\1is\\2"], ["^(.+)al \\^ iz(e|ed|es|ing|er|ers|ation|ations|m|ms|able|ability|abilities)$", "\\1aliz\\2"], ["^(.+)al \\^ is(e|ed|es|ing|er|ers|ation|ations|m|ms|able|ability|abilities)$", "\\1alis\\2"], ["^(.+)ar \\^ iz(e|ed|es|ing|er|ers|ation|ations|m|ms)$", "\\1ariz\\2"], ["^(.+)ar \\^ is(e|ed|es|ing|er|ers|ation|ations|m|ms)$", "\\1aris\\2"], ["^(.*[lmnty]) \\^ iz(e|es|ing|ed|er|ers|ation|ations|m|ms|able|ability|abilities)$", "\\1iz\\2"], ["^(.*[lmnty]) \\^ is(e|es|ing|ed|er|ers|ation|ations|m|ms|able|ability|abilities)$", "\\1is\\2"], ["^(.+)al \\^ olog(y|ist|ists|ical|ically)$", "\\1olog\\2"], ["^(.+)(ar|er|or) \\^ ish$", "\\1\\2ish"], ["^(.+e)e \\^ (e.+)$", "\\1\\2"], ["^(.+[bcdfghjklmnpqrstuvwxz])e \\^ ([aeiouy].*)$", "\\1\\2"], ["^(.*(?:[bcdfghjklmnprstvwxyz]|qu)[aeiou])([bcdfgklmnprtvz]) \\^ ([aeiouy].*)$", "\\1\\2\\2\\3"]];
+  var SYSTEMS = {
+    'Lapwing': { numberKey: null, numbers: {} },
+    'English Stenotype': { numberKey: '#', numbers: { 'S-': '1', 'T-': '2', 'P-': '3', 'H-': '4', 'A-': '5', 'O-': '0', '-F': '6', '-P': '7', '-L': '8', '-T': '9' } }
+  };
+  var IMPLICIT = ['A-', 'O-', '-E', '-U', '*'], SUFFIX_KEYS = ['-Z', '-D', '-S', '-G'], ALIASES = { able: 'ible', ability: 'ibility' };
+  var LETTER = KEYS.map(function (k) { return k.replace('-', ''); });
+  var BIT = {}; KEYS.forEach(function (k, i) { BIT[k] = 1 << i; });
+  var RIGHT_IDX = KEYS.indexOf('-E'), IMPLICIT_MASK = IMPLICIT.reduce(function (m, k) { return m | BIT[k]; }, 0), RIGHT_MASK = 0;
+  for (var ri = RIGHT_IDX; ri < KEYS.length; ri++) RIGHT_MASK |= 1 << ri;
+
+  function System(name) {
+    var def = SYSTEMS[name] || SYSTEMS['Lapwing'];
+    this.name = SYSTEMS[name] ? name : 'Lapwing';
+    this.numberKey = def.numberKey; this.numbers = def.numbers;
+    this.digitKey = {}; this.numMask = 0;
+    for (var k in def.numbers) { this.digitKey[def.numbers[k]] = k; this.numMask |= BIT[k]; }
+    this.rules = RULES.map(function (r) { return [new RegExp(r[0], 'i'), r[1].replace(/\\(\d)/g, '$$$1')]; });
+    this.words = null;       // spelling word list: word -> rank
+  }
+  System.prototype.steno = function (mask) {
+    var out = '', num = this.numberKey && (mask & 1) && (mask & this.numMask), hy = (mask & RIGHT_MASK) && !(mask & IMPLICIT_MASK);
+    if ((mask & 1) && !num) out += '#';
+    for (var i = 1; i < KEYS.length; i++) {
+      if (!(mask & (1 << i))) continue;
+      if (hy && i >= RIGHT_IDX) { out += '-'; hy = false; }
+      out += num && this.numbers[KEYS[i]] ? this.numbers[KEYS[i]] : LETTER[i];
+    }
+    return out;
+  };
+  System.prototype.parse = function (steno) {
+    var mask = 0, idx = 1;
+    for (var c = 0; c < steno.length; c++) {
+      var ch = steno[c];
+      if (ch === '#') { mask |= 1; continue; }
+      if (ch === '-') { if (idx > IMPLICIT_END) throw new Error('bad steno'); idx = IMPLICIT_END; continue; }
+      var want = null;
+      if (this.digitKey[ch]) { want = this.digitKey[ch]; mask |= 1; }
+      var found = -1;
+      for (var i = idx; i < KEYS.length; i++) if (want ? KEYS[i] === want : LETTER[i] === ch) { found = i; break; }
+      if (found < 0) throw new Error('bad steno');
+      mask |= 1 << found; idx = found + 1;
+    }
+    return mask;
+  };
+  var IMPLICIT_END = KEYS.indexOf('-U') + 1;
+  System.prototype.normalize = function (outline) {
+    var self = this;
+    try { return outline.split('/').map(function (s) { return s === '' ? '' : self.steno(self.parse(s)); }).join('/'); } catch (e) { return outline; }
+  };
+  System.prototype.stroke = function (v) {
+    var mask = typeof v === 'number' ? v : this.parse(v);
+    return { mask: mask, rtfcre: this.steno(mask) };
+  };
+
+  /* ---------------- dictionaries ---------------- */
+  function JsonDict(name, entries, system) {
+    this.name = name; this.kind = 'json'; this.enabled = true; this.map = new Map(); this.longest_key = 0;
+    for (var k in entries) {
+      var v = entries[k]; if (typeof v !== 'string') continue;
+      var nk = system ? system.normalize(k) : k, n = nk.split('/').length;
+      this.map.set(nk, v); if (n > this.longest_key) this.longest_key = n;
+    }
+    this.size = this.map.size;
+  }
+  JsonDict.prototype.get = function (key) { return this.map.get(key.join('/')); };
+  JsonDict.prototype.update_state = function () {};
+
+  /* plover-modal-dictionary: an entry stroke switches the dictionary on, a mismatch switches it off */
+  function ModalDict(name, data, system) {
+    var self = this;
+    this.name = name; this.kind = 'modal'; this.enabled = true; this.longest_key = 0; this.size = 0;
+    this.opt = { exclude_entry: false, exit_on_mismatch: true, exit_on_match: false, ignore_folding: true };
+    for (var o in this.opt) if (data[o] !== undefined) this.opt[o] = data[o];
+    this.sub = {};
+    ['entry', 'dict', 'exit'].forEach(function (n) {
+      var d = data[n], m = null;
+      if (d && typeof d === 'object') {
+        m = new Map();
+        for (var k in d) { var nk = system.normalize(k); m.set(nk, d[k]); self.longest_key = Math.max(self.longest_key, nk.split('/').length); self.size++; }
+      }
+      self.sub[n] = m;
+    });
+    this.reset();
+  }
+  ModalDict.prototype.reset = function () {
+    this._new_stroke = true; this._current_stroke = ''; this._ignore = false; this._to_activate = false; this._matched = false;
+    this._to_deactivate = false; this._activated = false; this._dormant = false; this._dormant_buffer = 0;
+  };
+  ModalDict.prototype._sub = function (n, key) { var m = this.sub[n]; return m ? m.get(key.join('/')) : undefined; };
+  ModalDict.prototype.get = function (key) {
+    if (key.length > this.longest_key) return undefined;
+    if (this._ignore || !key.length) return undefined;
+    if (this._new_stroke) { this._new_stroke = false; this._current_stroke = key[key.length - 1]; }
+    else {
+      this._matched = false;
+      if (key[key.length - 1] !== this._current_stroke && this.opt.ignore_folding) { this._ignore = true; return undefined; }
+    }
+    var output;
+    if (this._activated || (this._dormant && key.length > this._dormant_buffer)) {
+      output = this._sub('exit', key);
+      if (output != null) this._to_deactivate = true; else output = this._sub('dict', key);
+      if (output != null) { this._matched = true; if (!this._activated) this._to_activate = true; return output; }
+    }
+    if (!this._activated || !this.opt.exclude_entry) {
+      output = this._sub('entry', key);
+      if (output != null) { this._matched = true; this._to_activate = true; return output; }
+    }
+    return undefined;
+  };
+  ModalDict.prototype.update_state = function () {
+    if (this._activated) {
+      if (this._to_deactivate || (this.opt.exit_on_mismatch && !this._matched) || (this.opt.exit_on_match && this._matched)) { this._activated = false; this._dormant = true; this._dormant_buffer = 1; }
+    } else if (this._to_activate) { if (!this._to_deactivate) this._activated = true; }
+    else if (this._dormant) { this._dormant_buffer += 1; if (this._dormant_buffer >= this.longest_key) { this._dormant = false; this._dormant_buffer = 0; } }
+    this._new_stroke = true; this._ignore = false; this._to_activate = false; this._matched = false; this._to_deactivate = false;
+  };
+
+  /* a Python dictionary: lookup is whatever function the host hands over (it runs the real .py file) */
+  function FuncDict(name, longest, fn) { this.name = name; this.kind = 'py'; this.enabled = true; this.longest_key = longest; this.fn = fn; this.size = 0; }
+  FuncDict.prototype.get = function (key) { if (key.length > this.longest_key) return undefined; try { var v = this.fn(key); return v == null ? undefined : v; } catch (e) { return undefined; } };
+  FuncDict.prototype.update_state = function () {};
+
+  function Collection() { this.dicts = []; }
+  Object.defineProperty(Collection.prototype, 'longest_key', { get: function () { var m = 0; this.dicts.forEach(function (d) { if (d.enabled && d.longest_key > m) m = d.longest_key; }); return m; } });
+  Collection.prototype.lookup = function (key) {
+    var n = key.length; if (n > this.longest_key) return null;
+    for (var i = 0; i < this.dicts.length; i++) {
+      var d = this.dicts[i]; if (!d.enabled || n > d.longest_key) continue;
+      var v = d.get(key);
+      if (v != null) return v.toLowerCase() === '{plover:deleted}' ? null : v;
+    }
+    return null;
+  };
+  Collection.prototype.lookup_from_all = function (key) {
+    var out = [];
+    this.dicts.forEach(function (d) { if (!d.enabled || key.length > d.longest_key) return; var v = d.get(key); if (v) out.push([v, d]); });
+    return out;
+  };
+
+  /* ---------------- formatting: actions ---------------- */
+  var CAP = 'cap_first_word', LOWER = 'lower', LOWER_FIRST = 'lower_first_char', TITLE = 'title', UPPER = 'upper', UPPER_FIRST = 'upper_first_word';
+  var FIELDS = ['prev_attach', 'glue', 'word', 'upper_carry', 'orthography', 'next_attach', 'next_case', 'word_is_finished', 'space_char', 'case', 'trailing_space', 'prev_replace', 'text', 'combo', 'command'];
+  function Action(o) {
+    o = o || {};
+    this.prev_attach = !!o.prev_attach; this.glue = !!o.glue; this.word = o.word === undefined ? null : o.word; this.upper_carry = !!o.upper_carry;
+    this.orthography = o.orthography === undefined ? true : o.orthography; this.next_attach = !!o.next_attach; this.next_case = o.next_case || null;
+    this.word_is_finished = o.word_is_finished == null ? !this.next_attach : o.word_is_finished;
+    this.space_char = o.space_char === undefined ? ' ' : o.space_char; this.case = o.case || null; this.trailing_space = o.trailing_space || '';
+    this.prev_replace = o.prev_replace || ''; this.text = o.text === undefined ? null : o.text; this.combo = o.combo || null; this.command = o.command || null;
+  }
+  Action.prototype.copy_state = function () {
+    return new Action({ prev_attach: this.next_attach, case: this.case, glue: this.glue, orthography: this.orthography, space_char: this.space_char, upper_carry: this.upper_carry,
+      word: this.word, trailing_space: this.trailing_space, word_is_finished: this.word_is_finished, next_attach: this.next_attach, next_case: this.next_case });
+  };
+  Action.prototype.new_state = function () { return new Action({ prev_attach: this.next_attach, space_char: this.space_char, case: this.case, trailing_space: this.trailing_space }); };
+  // {=pattern/a/b}: which text applies depends on what comes next. Reads fall through to the current choice.
+  function LookAhead(pattern, a1, a2) {
+    var t = { __la: true, pattern: pattern, action1: a1, action2: a2, action: null };
+    t.update = function (text) { var m = false; try { m = new RegExp('^(?:' + pattern + ')').test(text); } catch (e) {} t.action = m ? a1 : a2; return t.action; };
+    t.update('');
+    return new Proxy(t, { get: function (o, k) { return k in o ? o[k] : o.action[k]; } });
+  }
+  function actEq(a, b) {
+    if (a === b) return true;
+    if (!a || !b || !!a.__la !== !!b.__la) return false;
+    if (a.__la) return a.pattern === b.pattern && actEq(a.action1, b.action1) && actEq(a.action2, b.action2) && actEq(a.action, b.action);
+    for (var i = 0; i < FIELDS.length; i++) if (a[FIELDS[i]] !== b[FIELDS[i]]) return false;
+    return true;
+  }
+
+  var WORD_SRC = "(?:\\p{Nd}+(?:[.,]\\p{Nd}+)+|['\\p{L}\\p{N}_]+[-\\p{L}\\p{N}_']*|[^\\p{L}\\p{N}_\\s]+)\\s*";
+  function words(s) { return s.match(new RegExp(WORD_SRC, 'gu')) || []; }
+  function firstWord(s) { var m = new RegExp('^' + WORD_SRC, 'u').exec(s); return m ? m[0] : null; }
+  function fragments(s) { return s.match(/\s*[^\s]+\s*|^\s*$/g) || []; }
+  function isSpace(s) { return s.length > 0 && /^\s+$/.test(s); }
+  function isDigit(s) { return /^\p{Nd}+$/u.test(s); }
+  function commonPrefix(a, b) { var i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i; }
+  function rightmost_word(s) { var w = words(s); if (!w.length) return ''; var l = w[w.length - 1]; return /\s$/.test(l) ? '' : l; }
+  function has_word_boundary(s) { if (!s) return false; if (/^\s/.test(s) || /\s$/.test(s)) return true; return words(s).length > 1; }
+  function capWords(s) { return s.split(' ').map(function (x) { return x.slice(0, 1).toUpperCase() + x.slice(1).toLowerCase(); }).join(' '); }
+  function apply_case(text, c) {
+    if (!c) return text;
+    if (c === CAP) return text.slice(0, 1).toUpperCase() + text.slice(1);
+    if (c === LOWER_FIRST) return text.slice(0, 1).toLowerCase() + text.slice(1);
+    if (c === UPPER_FIRST) { var w = firstWord(text); return w === null ? text : w.toUpperCase() + text.slice(w.length); }
+    return text;
+  }
+  function apply_mode(text, c, space_char, begin, last) {
+    var lower_title = begin && last.case !== CAP && last.case !== UPPER_FIRST;
+    if (c === LOWER) text = text.toLowerCase(); else if (c === UPPER) text = text.toUpperCase(); else if (c === TITLE && !lower_title) text = capWords(text);
+    if (space_char !== ' ') text = text.split(' ').join(space_char);
+    if (last.next_case === LOWER_FIRST && text && c === TITLE) text = text.slice(0, 1).toLowerCase() + text.slice(1);
+    return text;
+  }
+
+  /* ---------------- formatting: looking back over what was written ---------------- */
+  function Retro(prev) { this.previous_translations = prev || []; }
+  Retro.prototype.last_actions = function () {
+    var out = [], p = this.previous_translations;
+    for (var i = p.length - 1; i >= 0; i--) for (var j = p[i].formatting.length - 1; j >= 0; j--) out.push(p[i].formatting[j]);
+    return out;
+  };
+  Retro.prototype.last_fragments_all = function (limit) {
+    var replace = 0, next = null, cur = '', out = [], acts = this.last_actions();
+    for (var i = 0; i < acts.length; i++) {
+      var a = acts[i], part = a.text == null ? '' : a.text;
+      if (next !== null && next.text != null && !next.prev_attach) part += next.space_char;
+      if (replace) { if (part.length > replace) { part = part.slice(0, part.length - replace); replace = 0; } else { replace -= part.length; part = ''; } }
+      if (part) {
+        var fr = fragments(part + cur);
+        for (var k = fr.length - 1; k >= 1; k--) out.push(fr[k]);
+        cur = fr[0];
+        if (limit && out.length >= limit) return out;
+      }
+      replace += a.prev_replace.length; next = a;
+    }
+    if (!isSpace(cur)) out.push(cur.replace(/^\s+/, ''));
+    return out;
+  };
+  Retro.prototype.last_fragments = function (count) { return this.last_fragments_all(count || 1).slice(0, count || 1).reverse(); };
+  Retro.prototype.last_words = function (count, strip) {
+    count = count || 1; var out = [], fr = this.last_fragments_all(count + 2);
+    for (var i = 0; i < fr.length && out.length < count; i++) { var w = words(fr[i]); for (var j = w.length - 1; j >= 0 && out.length < count; j--) out.unshift(strip ? w[j].replace(/\s+$/, '') : w[j]); }
+    return out;
+  };
+  Retro.prototype.last_text = function (size) {
+    var text = ''; if (!size) return text;
+    var fr = this.last_fragments_all(0);
+    for (var i = 0; i < fr.length; i++) { text = fr[i] + text; if (text.length >= size) break; }
+    return text.slice(-size);
+  };
+  function Context(prev, last_action) { Retro.call(this, prev); this.last_action = last_action; this.translated_actions = []; }
+  Context.prototype = Object.create(Retro.prototype);
+  Context.prototype.new_action = function () { return this.last_action.new_state(); };
+  Context.prototype.copy_last_action = function () { return this.last_action.copy_state(); };
+  Context.prototype.translated = function (a) { this.translated_actions.push(a); this.last_action = a; };
+  Context.prototype.last_actions = function () { return this.translated_actions.slice().reverse().concat(Retro.prototype.last_actions.call(this)); };
+
+  /* ---------------- formatting: metas ---------------- */
+  function Engine(systemName) {
+    this.system = new System(systemName);
+    this.dictionary = new Collection();
+    this.translations = []; this.tail = null; this._to_undo = []; this._to_do = 0;
+    this.undo_length = 100; this.start_attached = false; this.start_capitalized = false; this.space_char = ' ';
+    this.ops = []; this.onStroke = null;
+  }
+  Engine.System = System; Engine.JsonDict = JsonDict; Engine.ModalDict = ModalDict; Engine.FuncDict = FuncDict; Engine.KEYS = KEYS; Engine.SYSTEMS = Object.keys(SYSTEMS);
+
+  Engine.prototype.add_suffix = function (word, suffix) {
+    var sp = suffix.indexOf(' '), rest = sp < 0 ? '' : suffix.slice(sp), sys = this.system, W = sys.words;
+    if (sp >= 0) suffix = suffix.slice(0, sp);
+    function fromRules(sfx, check) {
+      var c = [];
+      for (var i = 0; i < sys.rules.length; i++) { var m = sys.rules[i][0].exec(word + ' ^ ' + sfx); if (m) { var e = m[0].replace(sys.rules[i][0], sys.rules[i][1]); if (!check || check(e)) c.push(e); } }
+      return c;
+    }
+    var inDict = function (x) { return !!W && W.has(x); }, cands = [], simple = word + suffix;
+    if (ALIASES[suffix] !== undefined) cands = cands.concat(fromRules(ALIASES[suffix], inDict));
+    if (inDict(simple)) cands.push(simple);
+    cands = cands.concat(fromRules(suffix, inDict));
+    if (cands.length) { var best = cands[0]; for (var i = 1; i < cands.length; i++) if (W.get(cands[i]) < W.get(best)) best = cands[i]; return best + rest; }
+    cands = fromRules(suffix, null);
+    return (cands.length ? cands[0] : simple) + rest;
+  };
+
+  var METAS = {
+    attach: function (eng, ctx, meta) {
+      var a = ctx.new_action(), begin = meta[0] === '^', end = meta[meta.length - 1] === '^' && meta.length > 0;
+      if (!(begin || end)) { meta = '^' + meta + '^'; begin = end = true; }
+      if (begin) { meta = meta.slice(1); a.prev_attach = true; }
+      if (end) { meta = meta.slice(0, -1); a.next_attach = true; a.word_is_finished = false; }
+      var last_word = ctx.last_action.word || '';
+      if (!meta) a.orthography = false;
+      else if (last_word && !isSpace(meta) && ctx.last_action.orthography && begin && (!end || has_word_boundary(meta))) {
+        var nw = eng.add_suffix(last_word, meta), cl = commonPrefix(last_word, nw), replaced = last_word.slice(cl);
+        a.prev_replace = ctx.last_text(replaced.length);
+        last_word = last_word.slice(0, cl); meta = nw.slice(cl);
+      }
+      a.text = meta;
+      if (a.prev_attach) a.word = rightmost_word(last_word + meta);
+      return a;
+    },
+    carry_capitalize: function (eng, ctx, meta) {
+      var a = ctx.new_action();
+      if (ctx.last_action.next_case === CAP) a.next_case = CAP;
+      var begin = meta[0] === '^';
+      if (begin) { meta = meta.slice(1); a.prev_attach = true; }
+      meta = meta.slice(2);
+      var end = meta.length > 0 && meta[meta.length - 1] === '^';
+      if (end) { meta = meta.slice(0, -1); a.next_attach = true; a.word_is_finished = false; }
+      if (meta || begin || end) a.text = meta;
+      return a;
+    },
+    case: function (eng, ctx, c) { var a = ctx.copy_last_action(); a.next_case = c.toLowerCase(); return a; },
+    retro_case: function (eng, ctx, c) {
+      var a = ctx.copy_last_action(); a.prev_attach = true;
+      var lw = ctx.last_words(1);
+      if (lw.length) { a.prev_replace = lw[0]; a.text = apply_case(lw[0], c.toLowerCase()); } else a.text = '';
+      return a;
+    },
+    if_next_matches: function (eng, ctx, meta) {
+      var parts = [], rx = /((?:[^\\/]|\\\\|\\\/)*)\/?/y, pos = 0;
+      while (parts.length < 2 && pos <= meta.length) { rx.lastIndex = pos; var m = rx.exec(meta); if (!m) break; if (m[1]) parts.push(m[1]); if (m[0].length === 0) break; pos += m[0].length; }
+      if (pos < meta.length) parts.push(meta.slice(pos));
+      parts = parts.map(function (s) { return s.replace(/\\([\\/])/g, '$1'); });
+      var a1 = ctx.new_action(), a2 = ctx.new_action(); a1.text = parts[1] || ''; a2.text = parts[2] || '';
+      return LookAhead(parts[0] || '', a1, a2);
+    },
+    retro_currency: function (eng, ctx, fmt) {
+      var a = ctx.copy_last_action(), lw = ctx.last_words(1);
+      if (!lw.length) return a;
+      var cur = lw[0].replace(/,/g, '').trim(), out = null;
+      if (/^[+-]?\d+$/.test(cur)) out = Number(cur).toLocaleString('en-US');
+      else if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(cur)) out = Number(cur).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (out !== null) { a.prev_attach = true; a.prev_replace = lw[0]; a.text = fmt.replace(/c/g, out); a.word = null; }
+      return a;
+    },
+    glue: function (eng, ctx, text) { var a = ctx.new_action(); a.glue = true; a.text = text; if (ctx.last_action.glue) a.prev_attach = true; return a; },
+    mode: function (eng, ctx, cmd) {
+      var i = cmd.indexOf(':'), mode = (i < 0 ? cmd : cmd.slice(0, i)).toLowerCase(), arg = i < 0 ? null : cmd.slice(i + 1), a = ctx.copy_last_action();
+      if (mode === 'set_space') { a.space_char = arg === null ? '' : arg; return a; }
+      if (mode === 'caps') a.case = UPPER; else if (mode === 'title') a.case = TITLE; else if (mode === 'lower') a.case = LOWER; else if (mode === 'snake') a.space_char = '_';
+      else if (mode === 'camel') { a.case = TITLE; a.space_char = ''; a.next_case = LOWER_FIRST; }
+      else if (mode === 'reset') { a.space_char = ' '; a.case = null; } else if (mode === 'reset_space') a.space_char = ' '; else if (mode === 'reset_case') a.case = null;
+      return a;
+    },
+    comma: function (eng, ctx, text) { var a = ctx.new_action(); a.text = text; a.prev_attach = true; return a; },
+    stop: function (eng, ctx, text) { var a = ctx.new_action(); a.prev_attach = true; a.text = text; a.next_case = CAP; return a; },
+    word_end: function (eng, ctx) { var a = ctx.copy_last_action(); a.word_is_finished = true; return a; },
+    command: function (eng, ctx, c) { var a = ctx.copy_last_action(); a.command = c; return a; },
+    key_combo: function (eng, ctx, c) { var a = ctx.copy_last_action(); a.combo = c; return a; },
+    // plover-stitching
+    stitch: function (eng, ctx, cmd) {
+      var args = cmd.split(':'), word = args[0], delim = args.length > 1 ? args[1] : '-', a = ctx.new_action();
+      a.prev_attach = ctx.last_action.glue || ctx.last_action.next_attach; a.glue = true;
+      a.text = ctx.last_action.glue ? delim + word : word;
+      return a;
+    },
+    stitch_last_word: function (eng, ctx, cmd) {
+      var args = cmd.split(':'), n = args[0] ? parseInt(args[0], 10) : 1, delim = args.length > 1 ? args[1] : '-', a = ctx.copy_last_action();
+      var lw = ctx.last_words(n).join('');
+      if (lw) {
+        a.text = words(lw).map(function (w) { var sw = w.replace(/\s+$/, ''); return Array.from(sw).join(delim) + w.slice(sw.length); }).join('');
+        a.prev_replace = lw; a.prev_attach = true; a.word = null;
+      }
+      return a;
+    }
+  };
+  function parse_meta(meta) {
+    var m;
+    if ((m = /^:([^:]+):?([\s\S]*)$/.exec(meta))) return [m[1].toLowerCase(), m[2]];
+    if ((m = /^PLOVER:([\s\S]*)$/i.exec(meta))) return ['command', m[1]];
+    if ((m = /^#([\s\S]*)$/.exec(meta))) return ['key_combo', m[1]];
+    if (/^[,:;]$/.test(meta)) return ['comma', meta];
+    if (/^[.!?]$/.test(meta)) return ['stop', meta];
+    if (meta === '-|') return ['case', CAP]; if (meta === '>') return ['case', LOWER_FIRST]; if (meta === '<') return ['case', UPPER_FIRST];
+    if (meta === '*-|') return ['retro_case', CAP]; if (meta === '*>') return ['retro_case', LOWER_FIRST]; if (meta === '*<') return ['retro_case', UPPER_FIRST];
+    if (meta === '$') return ['word_end', meta];
+    if ((m = /^=([\s\S]*)$/.exec(meta))) return ['if_next_matches', m[1]];
+    if ((m = /^MODE:([\s\S]*)$/i.exec(meta))) return ['mode', m[1]];
+    if ((m = /^\*\(([\s\S]*)\)$/.exec(meta))) return ['retro_currency', m[1]];
+    if ((m = /^&([\s\S]*)$/.exec(meta))) return ['glue', m[1]];
+    if (/^\^?~\|[\s\S]*$/.test(meta)) return ['carry_capitalize', meta];
+    if (/^\^[\s\S]*$/.test(meta)) return ['attach', meta];
+    if (/^[\s\S]*\^$/.test(meta)) return ['attach', meta];
+    return [null, null];
+  }
+  function unescape_atom(s) { return s.split('\\{').join('{').split('\\}').join('}'); }
+  Engine.prototype._finalize = function (a, ctx) {
+    if (a.__la) { this._finalize(a.action1, ctx); this._finalize(a.action2, ctx); return; }
+    var text = a.text; if (text === null) return;
+    if (a.word === null) { var lw = null; if (a.glue && ctx.last_action.glue) lw = ctx.last_action.word; a.word = rightmost_word((lw || '') + text); }
+    var c = ctx.last_action.next_case;
+    if (!c && a.prev_attach && ctx.last_action.upper_carry) c = UPPER_FIRST;
+    text = apply_case(text, c);
+    if (c === UPPER_FIRST) a.upper_carry = !has_word_boundary(text);
+    a.text = apply_mode(text, a.case, a.space_char, a.prev_attach, ctx.last_action);
+    a.trailing_space = a.next_attach ? '' : a.space_char;
+  };
+  Engine.prototype._atom = function (atom, ctx) {
+    var a;
+    if (atom[0] === '{' && atom[atom.length - 1] === '}' && atom.length >= 2) {
+      var pm = parse_meta(unescape_atom(atom.slice(1, -1)));
+      a = pm[0] !== null && METAS[pm[0]] ? METAS[pm[0]](this, ctx, pm[1]) : ctx.new_action();
+    } else { a = ctx.new_action(); a.text = unescape_atom(atom); }
+    this._finalize(a, ctx);
+    return a;
+  };
+  Engine.prototype._to_actions = function (translation, ctx) {
+    var atoms = isDigit(translation) ? ['{&' + translation + '}'] : (translation.match(/(?:\\\{|\\\}|[^{}])+|\{(?:\\\{|\\\}|[^{}])*\}/g) || []).map(function (x) { return x.replace(/^ +| +$/g, ''); }).filter(Boolean);
+    var list = [];
+    for (var i = 0; i < atoms.length; i++) { var a = this._atom(atoms[i], ctx); list.push(a); ctx.translated(a); }
+    if (!list.length) { var c = ctx.copy_last_action(); list = [c]; ctx.translated(c); }
+    return list;
+  };
+  Engine.prototype._raw_to_actions = function (stroke, ctx) {
+    var nd = stroke.replace('-', '');
+    if (isDigit(nd)) return this._to_actions(nd, ctx);
+    var l = ctx.last_action, a = new Action({ text: stroke, word: stroke, case: l.case, prev_attach: l.next_attach, space_char: l.space_char, trailing_space: l.space_char });
+    ctx.translated(a);
+    return [a];
+  };
+
+  /* ---------------- formatting: turning action changes into backspaces and text ---------------- */
+  function TextFmt() { this.replaced_text = ''; this.appended_text = ''; }
+  TextFmt.prototype.render = function (list, pending) {
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      if (a.text === null) { if (pending) pending(a); continue; }
+      if (a.prev_replace) {
+        var replaced = a.prev_replace.length, appended = this.appended_text.length;
+        if (replaced > appended) {
+          replaced -= appended;
+          if (replaced > this.replaced_text.length) this.replaced_text = a.prev_replace.slice(0, replaced);
+          else this.replaced_text = this.replaced_text.slice(0, this.replaced_text.length - replaced) + a.prev_replace.slice(0, replaced);
+          this.appended_text = '';
+        } else this.appended_text = this.appended_text.slice(0, appended - replaced);
+      }
+      if (!a.prev_attach) this.appended_text += a.space_char;
+      this.appended_text += a.text;
+    }
+  };
+  Engine.prototype._render = function (old, neu) {
+    var before = new TextFmt(), after = new TextFmt(), ops = this.ops;
+    function flush() {
+      var rt = before.replaced_text.length > after.replaced_text.length ? before.replaced_text : after.replaced_text;
+      var b = rt.slice(0, rt.length - before.replaced_text.length) + before.appended_text, a = rt.slice(0, rt.length - after.replaced_text.length) + after.appended_text;
+      var cl = commonPrefix(b, a), erased = b.length - cl;
+      if (erased) ops.push(['bs', erased]);
+      if (a.length > cl) ops.push(['str', a.slice(cl)]);
+      before.replaced_text = ''; before.appended_text = ''; after.replaced_text = ''; after.appended_text = '';
+    }
+    before.render(old, null);
+    after.render(neu, function (a) { flush(); if (a.combo) ops.push(['combo', a.combo]); else if (a.command) ops.push(['cmd', a.command]); });
+    flush();
+  };
+  Engine.prototype._last_action = function (prev) {
+    if (prev && prev.length && prev[prev.length - 1].formatting.length) { var f = prev[prev.length - 1].formatting; return f[f.length - 1]; }
+    return new Action({ next_attach: this.start_attached, next_case: this.start_capitalized ? CAP : null, space_char: this.space_char });
+  };
+  Engine.prototype._format = function (undo, doList, prev) {
+    var neu = [], old = [], i;
+    if (doList.length) {
+      var ctx = new Context(prev || [], this._last_action(prev));
+      for (i = 0; i < doList.length; i++) { var t = doList[i]; t.formatting = t.english ? this._to_actions(t.english, ctx) : this._raw_to_actions(t.rtfcre[0], ctx); }
+      neu = ctx.translated_actions.slice();
+    }
+    undo.forEach(function (t) { old = old.concat(t.formatting); });
+    if (prev && prev.length) {
+      var text = '';
+      for (i = 0; i < neu.length; i++) if (neu[i].text) { text = neu[i].text; break; }
+      var tail = [], acts = new Retro(prev).last_actions();
+      for (i = 0; i < acts.length; i++) {
+        var a = acts[i];
+        if (a.__la) {
+          var old_a = a.action, new_a = a.update(text);
+          if (actEq(new_a, old_a)) break;
+          old = [old_a].concat(tail, old); neu = [new_a].concat(tail, neu); text = a.text; tail = [];
+        } else if (a.text !== null) { if (a.text) break; tail.unshift(a); }
+      }
+    }
+    var n = Math.min(old.length, neu.length); i = 0;
+    while (i < n && actEq(old[i], neu[i])) i++;
+    this._render(old.slice(i), neu.slice(i));
+  };
+
+  /* ---------------- translation ---------------- */
+  function Translation(outline, english) { this.strokes = outline; this.rtfcre = outline.map(function (s) { return s.rtfcre; }); this.english = english; this.replaced = []; this.formatting = []; this.is_retrospective_command = false; }
+  Translation.prototype.has_undo = function () {
+    if (!this.formatting.length) return true; if (this.replaced.length) return true;
+    for (var i = 0; i < this.formatting.length; i++) if (this.formatting[i].text || this.formatting[i].prev_replace) return true;
+    return false;
+  };
+  Engine.Translation = Translation;
+  Engine.prototype._prev = function (count) {
+    var prev = count != null ? this.translations.slice(0, this.translations.length - count) : this.translations.slice();
+    if (prev.length) return prev;
+    return this.tail ? [this.tail] : null;
+  };
+  Engine.prototype.flush = function (extra) {
+    var prev, d;
+    if (this._to_do) { prev = this._prev(this._to_do); d = this.translations.slice(-this._to_do); } else { prev = this._prev(); d = []; }
+    if (extra) d = d.concat(extra);
+    var undo = this._to_undo; this._to_undo = []; this._to_do = 0;
+    if (undo.length || d.length) this._format(undo, d, prev);
+    this._restrict(Math.max(this.dictionary.longest_key, this.undo_length));
+  };
+  Engine.prototype._restrict = function (n) {
+    var sc = 0, tc = 0, t = this.translations;
+    for (var i = t.length - 1; i >= 0; i--) { sc += t[i].strokes.length; tc++; if (sc >= n) break; }
+    var idx = t.length - tc;
+    if (idx) { this.tail = t[idx - 1]; t.splice(0, idx); }
+  };
+  Engine.prototype._undo = function (list) {
+    for (var i = list.length - 1; i >= 0; i--) { this.translations.pop(); if (this._to_do) this._to_do--; else this._to_undo.unshift(list[i]); }
+  };
+  Engine.prototype._do = function (list) { for (var i = 0; i < list.length; i++) this.translations.push(list[i]); this._to_do += list.length; };
+  Engine.prototype.translate_translation = function (t) { this._undo(t.replaced); this._do([t]); };
+  Engine.prototype.untranslate_translation = function (t) { this._undo([t]); this._do(t.replaced); };
+  Engine.prototype._lookup_strokes = function (strokes) { return this.dictionary.lookup(strokes.map(function (s) { return s.rtfcre; })); };
+  Engine.prototype._involved_suffixes = function (stroke, suffixes) {
+    var out = [], sys = this.system;
+    for (var i = 0; i < suffixes.length; i++) {
+      var sm = BIT[suffixes[i]]; if (!(stroke.mask & sm)) continue;
+      var ss = sys.stroke(sm), m = this._lookup_strokes([ss]);
+      if (m !== null) out.push([ss, m]);
+    }
+    return out;
+  };
+  Engine.prototype._lookup_with_suffix = function (strokes, suffixes) {
+    if (!suffixes || !suffixes.length) return this._lookup_strokes(strokes);
+    for (var i = 0; i < suffixes.length; i++) {
+      var last = strokes[strokes.length - 1], main = this._lookup_strokes(strokes.slice(0, -1).concat([this.system.stroke(last.mask & ~suffixes[i][0].mask)]));
+      if (main !== null) return main + ' ' + suffixes[i][1];
+    }
+    return null;
+  };
+  Engine.prototype.lookup = function (strokes, suffixKeys) {
+    var r = this._lookup_strokes(strokes); if (r !== null) return r;
+    var sfx = this._involved_suffixes(strokes[strokes.length - 1], suffixKeys || []);
+    return sfx.length ? this._lookup_with_suffix(strokes, sfx) : null;
+  };
+  Engine.prototype._lookup_with_prefix = function (max_len, last_translations, strokes, suffixes) {
+    if (strokes.length < max_len) {
+      var fin = true;
+      if (last_translations.length) { var f = last_translations[last_translations.length - 1].formatting; if (f.length) fin = f[f.length - 1].word_is_finished; }
+      if (fin) { var m = this._lookup_with_suffix([{ mask: 0, rtfcre: '' }].concat(strokes), suffixes); if (m !== null) return m; }
+    }
+    if (strokes.length <= max_len) return this._lookup_with_suffix(strokes, suffixes);
+    return null;
+  };
+  Engine.prototype._find_longest_match = function (min_len, max_len, stroke, suffixKeys) {
+    var suffixes = null;
+    if (suffixKeys) { suffixes = this._involved_suffixes(stroke, suffixKeys); if (!suffixes.length) return null; }
+    var num = 1, count = 0, T = this.translations;
+    for (var i = T.length - 1; i >= 0; i--) { num += T[i].strokes.length; if (num > max_len) break; count++; }
+    var translations = T.slice(T.length - count);
+    for (i = 0; i <= translations.length; i++) {
+      var replaced = translations.slice(i), strokes = [];
+      replaced.forEach(function (t) { strokes = strokes.concat(t.strokes); });
+      strokes.push(stroke);
+      if (strokes.length < min_len) continue;
+      var mapping = this._lookup_with_prefix(max_len, translations.slice(0, i), strokes, suffixes);
+      if (mapping !== null) { var t = new Translation(strokes, mapping); t.replaced = replaced; return t; }
+    }
+    return null;
+  };
+  var LEGACY = { '{*}': 'retro_toggle_asterisk', '{*!}': 'retro_delete_space', '{*?}': 'retro_insert_space', '{*+}': 'repeat_last_stroke' };
+  Engine.prototype.translate_stroke = function (stroke) {
+    var max_len = this.dictionary.longest_key, mapping = this._lookup_with_prefix(max_len, this.translations, [stroke], null), macro = null, cmdline = '';
+    if (mapping === null) { if (stroke.rtfcre === '*') macro = 'undo'; }
+    else if (LEGACY[mapping]) macro = LEGACY[mapping];
+    else if (/^=\w+(:|$)/.test(mapping)) { var c = mapping.indexOf(':'); macro = c < 0 ? mapping.slice(1) : mapping.slice(1, c); cmdline = c < 0 ? '' : mapping.slice(c + 1); }
+    if (macro) { var fn = MACROS[macro.toLowerCase()]; if (fn) fn(this, stroke, cmdline); return; }
+    var t = this._find_longest_match(2, max_len, stroke, null) || (mapping !== null && new Translation([stroke], mapping)) || this._find_longest_match(1, max_len, stroke, SUFFIX_KEYS) || new Translation([stroke], null);
+    this.translate_translation(t);
+  };
+  function repeatN(args) { var n = parseInt(String(args).split(',')[0], 10); return isNaN(n) ? 1 : n; }
+  var MACROS = {
+    undo: function (e, stroke) {
+      for (var i = e.translations.length - 1; i >= 0; i--) { var t = e.translations[i]; e.untranslate_translation(t); if (t.has_undo()) return; }
+      e.flush([new Translation([stroke], '{#Control_L(BackSpace)}{^}')]);
+    },
+    repeat_last_stroke: function (e) { var T = e.translations; if (!T.length) return; var s = T[T.length - 1].strokes; e.translate_stroke(e.system.stroke(s[s.length - 1].mask)); },
+    retro_toggle_asterisk: function (e) {
+      var T = e.translations; if (!T.length) return;
+      var t = T[T.length - 1]; e.untranslate_translation(t);
+      e.translate_stroke(e.system.stroke(t.strokes[t.strokes.length - 1].mask ^ BIT['*']));
+    },
+    retro_delete_space: function (e, stroke) {
+      var T = e.translations; if (T.length < 2) return;
+      var replaced = T.slice(-2); if (replaced[1].is_retrospective_command) return;
+      var english = [];
+      replaced.forEach(function (t) { if (t.english !== null) english.push(t.english); else if (t.rtfcre.length === 1 && isDigit(t.rtfcre[0])) english.push('{&' + t.rtfcre[0] + '}'); });
+      if (english.length > 1) { var t = new Translation([stroke], english.join('{^~|^}')); t.replaced = replaced; t.is_retrospective_command = true; e.translate_translation(t); }
+    },
+    retro_insert_space: function (e, stroke) {
+      var T = e.translations; if (!T.length) return;
+      var replaced = T[T.length - 1]; if (replaced.is_retrospective_command) return;
+      var ls = replaced.strokes[replaced.strokes.length - 1], english = replaced.replaced.map(function (t) { return t.english || t.rtfcre.join('/'); });
+      if (english.length) {
+        english.push(e.lookup([ls], SUFFIX_KEYS) || ls.rtfcre);
+        var t = new Translation([stroke], english.join(' ')); t.replaced = [replaced]; t.is_retrospective_command = true; e.translate_translation(t);
+      }
+    },
+    // plover-last-translation
+    repeat_last_translation: function (e, stroke, args) { var T = e.translations; if (!T.length) return; T.slice(-repeatN(args)).forEach(function (t) { e.translate_translation(new Translation(t.strokes, t.english)); }); },
+    repeat_last_word: function (e, stroke, args) { if (!e.translations.length) return; new Retro(e.translations).last_words(repeatN(args)).forEach(function (w) { e.translate_translation(new Translation([stroke], w)); }); },
+    repeat_last_fragment: function (e, stroke, args) { if (!e.translations.length) return; new Retro(e.translations).last_fragments(repeatN(args)).forEach(function (f) { e.translate_translation(new Translation([stroke], f)); }); },
+    repeat_last_character: function (e, stroke, args) { if (!e.translations.length) return; e.translate_translation(new Translation([stroke], new Retro(e.translations).last_text(repeatN(args)))); }
+  };
+  MACROS.retrospective_toggle_asterisk = MACROS.retro_toggle_asterisk; MACROS.retrospective_delete_space = MACROS.retro_delete_space; MACROS.retrospective_insert_space = MACROS.retro_insert_space;
+
+  /* one stroke in, a list of output operations out: ['bs', n] | ['str', text] | ['combo', keys] | ['cmd', command] */
+  Engine.prototype.stroke = function (v) {
+    var s = this.system.stroke(v);
+    this.ops = [];
+    this.translate_stroke(s); this.flush();
+    this.dictionary.dicts.forEach(function (d) { d.update_state(); });
+    var T = this.translations, last = T.length ? T[T.length - 1] : null;
+    return { steno: s.rtfcre, ops: this.ops, last: last };
+  };
+  Engine.prototype.clear = function () { this.translations = []; this.tail = null; this._to_undo = []; this._to_do = 0; this.dictionary.dicts.forEach(function (d) { if (d.reset) d.reset(); }); };
+  Engine.prototype.setSystem = function (name) { var w = this.system.words; this.system = new System(name); this.system.words = w; this.clear(); };
+  // "word rank" lines, as in Plover's american_english_words.txt
+  Engine.prototype.setWordList = function (text) {
+    var m = new Map(), lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) { var l = lines[i], sp = l.lastIndexOf(' '); if (sp > 0) m.set(l.slice(0, sp), parseInt(l.slice(sp + 1), 10)); }
+    this.system.words = m;
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Engine; else root.StenoEngine = Engine;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* RTF/CRE steno dictionary reader. Returns {outline: translation} in Plover's notation.
+   Covers the constructs Plover's own reader maps: \cxs entries, \cxp punctuation, \cxds glue-less attach,
+   \cxfc capitalise next, \cxfl lowercase next, \cxfing fingerspelling glue, \par and \line, \~ and \_ . */
+(function (root) {
+  'use strict';
+  function convert(body) {
+    var out = '', i = 0, n = body.length;
+    function ctrl() {              // read "\word123 " at i (i sits on the backslash)
+      var m = /^\\([a-z]+)(-?\d+)? ?/.exec(body.slice(i, i + 40));
+      if (m) { i += m[0].length; return m[1]; }
+      var ch = body[i + 1]; i += 2; return ch;
+    }
+    function group() {             // contents of a {...} group, i sits just after '{'
+      var depth = 1, start = i;
+      while (i < n && depth) { if (body[i] === '\\') i += 2; else { if (body[i] === '{') depth++; else if (body[i] === '}') depth--; i++; } }
+      return body.slice(start, i - 1);
+    }
+    while (i < n) {
+      var ch = body[i];
+      if (ch === '{') {
+        i++;
+        var inner = group(), m;
+        if ((m = /^\\\*\\cxplovermeta ?([\s\S]*)$/.exec(inner))) out += '{' + m[1] + '}';
+        else if ((m = /^\\\*\\cxplovermacro ?([\s\S]*)$/.exec(inner))) out += '=' + m[1];
+        else if ((m = /^\\cxp(\S+) ?$/.exec(inner)) || (m = /^\\cxp ([\s\S]*)$/.exec(inner))) { var p = m[1].trim(); out += /^[.?!,;:]$/.test(p) ? '{' + p + '}' : '{^' + p + '^}'; }
+        else if ((m = /^\\cxfing ?([\s\S]*)$/.exec(inner))) out += '{&' + m[1] + '}';
+        else if (/^\\\*/.test(inner)) { /* comments, dates, flags and other destinations: ignore */ }
+        else if (/\\cxds/.test(inner)) {
+          var begin = /^\\cxds ?/.test(inner), end = /\\cxds ?$/.test(inner) && !(begin && /^\\cxds ?$/.test(inner));
+          var mid = inner.replace(/^\\cxds ?/, '').replace(/\\cxds ?$/, '');
+          out += '{' + (begin ? '^' : '') + convert(mid) + (end ? '^' : '') + '}';
+        }
+        else out += convert(inner);
+        continue;
+      }
+      if (ch === '\\') {
+        var nx = body[i + 1];
+        if (nx === '\\' || nx === '{' || nx === '}') { out += nx === '\\' ? '\\' : '\\' + nx; i += 2; continue; }
+        if (nx === '~') { out += '{^ ^}'; i += 2; continue; }
+        if (nx === '_') { out += '{^-^}'; i += 2; continue; }
+        if (nx === "'") { out += String.fromCharCode(parseInt(body.slice(i + 2, i + 4), 16)); i += 4; continue; }
+        if (nx === '\n' || nx === '\r') { out += '\n\n'; i += 2; continue; }
+        var w = ctrl();
+        if (w === 'cxds') out += '{^}'; else if (w === 'cxfc') out += '{-|}'; else if (w === 'cxfl') out += '{>}';
+        else if (w === 'par') out += '\n\n'; else if (w === 'line') out += '\n'; else if (w === 'tab') out += '\t'; else if (w === 'cxdstroke') out += '=undo';
+        else if (w === 'u') { /* \uN? handled loosely */ }
+        continue;
+      }
+      if (ch === '\r' || ch === '\n') { i++; continue; }
+      out += ch; i++;
+    }
+    return out;
+  }
+  function tidy(t) { t = t.trim(); return /^[.?!,;:]$/.test(t) ? '{' + t + '}' : t; }
+  function parse(text) {
+    var out = {}, rx = /\{\\\*\\cxs ([^}]+)\}/g, m, prevEnd = -1, prevKey = null;
+    while ((m = rx.exec(text))) {
+      if (prevKey !== null) out[prevKey] = tidy(convert(stripTail(text.slice(prevEnd, m.index))));
+      prevKey = m[1].trim(); prevEnd = rx.lastIndex;
+    }
+    if (prevKey !== null) { var rest = text.slice(prevEnd), end = rest.lastIndexOf('}'); out[prevKey] = tidy(convert(stripTail(end >= 0 ? rest.slice(0, end) : rest))); }
+    return out;
+  }
+  function stripTail(s) { return s.replace(/[\r\n]+$/, ''); }
+  var api = { parse: parse };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.RtfCre = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* JavaScript ports of the four Python dictionaries that ship with Lapwing, so they work without a Python runtime.
+   jeff-phrasing by Jeff Wu, emily-symbols and emily-modifiers by Emily (EPLHREU), abby-left-hand-modifiers by Abby
+   (Abkwreu), as packaged in plover-lapwing-aio. Each port is used only for a file whose text matches the version it
+   was ported from, and was checked against the Python original on every possible stroke. */
+var PyPorts = (function () {
+  'use strict';
+  var T = {"emily-symbols.py":{"hash":2904453957473046,"longest":1,"t":{"uniqueStarters":["SKWH"],"attachmentMethod":"space","symbols":{"SKWH":{"FG":["{#Tab}","{#Backspace}","{#Delete}","{#Escape}"],"RPBG":["{#Up}","{#Left}","{#Right}","{#Down}"],"FRPBG":["{#Page_Up}","{#Home}","{#End}","{#Page_Down}"],"FRBG":["{#AudioPlay}","{#AudioPrev}","{#AudioNext}","{#AudioStop}"],"FRB":["{#AudioMute}","{#AudioLowerVolume}","{#AudioRaiseVolume}","{#Eject}"],"":["","{*!}","{*?}","{#Space}"],"FL":["{*-|}","{*<}","{<}","{*>}"],"RPB":["↵","↵","↵","↵"],"FR":["!","¬","↦","¡"],"FP":["\"","“","”","„"],"FRLG":["#","©","®","™"],"RPBL":["$","¥","€","£"],"FRPB":["%","‰","‱","φ"],"FBG":["&","∩","∧","∈"],"F":["'","‘","’","‚"],"FPL":["(","[","<","\\{"],"RBG":[")","]",">","\\}"],"L":["*","∏","§","×"],"G":["+","∑","¶","±"],"B":[",","∪","∨","∉"],"PL":["-","−","–","—"],"R":[".","•","·","…"],"RP":["/","⇒","⇔","÷"],"LG":[":","∋","∵","∴"],"RB":[";","∀","∃","∄"],"PBLG":["=","≡","≈","≠"],"FPB":["?","¿","∝","‽"],"FRPBLG":["@","⊕","⊗","∅"],"FB":["\\","Δ","√","∞"],"RPG":["^","«","»","°"],"BG":["_","≤","≥","µ"],"P":["`","⊂","⊃","π"],"PB":["|","⊤","⊥","¦"],"FPBG":["~","〜","⊇","˜"],"FPBL":["↑","←","→","↓"]},"#SKWH":{"":"test"}}}},"emily-modifiers.py":{"hash":8264138090278057,"longest":1,"t":{"uniqueEnders":["LGTS"],"spelling":{"A":"a","PW":"b","KR":"c","TK":"d","E":"e","TP":"f","TKPW":"g","H":"h","EU":"i","AOEU":"i","SKWR":"j","SKWRAEU":"j","K":"k","HR":"l","PH":"m","TPH":"n","O":"o","P":"p","KW":"q","R":"r","S":"s","T":"t","U":"u","SR":"v","W":"w","KP":"x","KWH":"y","STKPW":"z","STKPWHR":"z"},"symbols":{"TR":["tab","backspace","delete","escape"],"KPWR":["up","left","right","down"],"TKPWR":["page_up","home","end","page_down"],"TKWR":["AudioPlay","AudioPrev","AudioNext","AudioStop"],"TKW":["AudioMute","AudioLowerVolume","AudioRaiseVolume",""],"":["","return","tab","space"],"TK":["exclam","","notsign","exclamdown"],"TP":["quotedbl","","",""],"TKHR":["numbersign","","",""],"KPWH":["dollar","","",""],"TKPW":["percent","","",""],"TWR":["ampersand","","",""],"T":["apostrophe","","",""],"TPH":["parenleft","less","bracketleft","braceleft"],"KWR":["parenright","greater","bracketright","braceright"],"H":["asterisk","","","multiply"],"R":["plus","","",""],"W":["comma","","",""],"PH":["minus","","",""],"K":["period","","",""],"KP":["slash","","","division"],"HR":["colon","","",""],"KW":["semicolon","","",""],"PWHR":["equal","","",""],"TPW":["question","questiondown","",""],"TKPWHR":["at","","",""],"TW":["backslash","","",""],"KPR":["asciicircum","guillemotleft","guillemotright",""],"WR":["underscore","","","mu"],"P":["grave","","",""],"PW":["bar","","",""],"TPWR":["asciitilde","","",""]}}},"abby-left-hand-modifiers.py":{"hash":2787435475381171,"longest":2,"t":{"modifiers":["TKPWHR","KHR","THRA","TKHRA","SH","SKHR","STHRA","STKHRA","KPW","KPWHR","TKPWHRA","TKPWHRAO","SKPWHR","SKPWHRO","STKPWHRA","STKPWHRAO"],"keys":{"A":"a","PW":"b","KR":"c","TK":"d","E":"e","SK":"e","TP":"f","TKPW":"g","H":"h","EU":"i","SKW":"i","SKWR":"j","K":"k","HR":"l","PH":"m","TPH":"n","O":"o","P":"p","KW":"q","R":"r","S":"s","T":"t","U":"u","WR":"u","SR":"v","W":"w","KP":"x","KWH":"y","STK":"z","STKPW":"z","AO":"0","RAO":"1","WAO":"2","WRAO":"3","KAO":"4","KRAO":"5","KWAO":"6","KWRAO":"7","SAO":"8","SRAO":"9","TPRAO":"f1","TPWAO":"f2","TPWRAO":"f3","TKPAO":"f4","TKPRAO":"f5","TKPWAO":"f6","TKPWRAO":"f7","STPAO":"f8","STPRAO":"f9","STPWAO":"f10","STPWRAO":"f11","STKPAO":"f12","AO*":"kp_0","RAO*":"kp_1","WAO*":"kp_2","WRAO*":"kp_3","KAO*":"kp_4","KRAO*":"kp_5","KWAO*":"kp_6","KWRAO*":"kp_7","SAO*":"kp_8","SRAO*":"kp_9","PR*":"kp_decimal","PHR*":"kp_add","PHR":"kp_add","TKH*":"kp_subtract","STR*":"kp_multiply","STR":"kp_multiply","SHR*":"kp_divide","TPH*":"num_lock","PR":"period","KPH":"comma","SHR":"slash","SKHR":"semicolon","KWO":"apostrophe","PWHR":"bracketleft","PWR":"bracketright","SPWHR":"backslash","TKH":"minus","KWA":"equal","TKPWR":"grave","PA":"up","WA":"down","KA":"left","RA":"right","PA*":"prior","WA*":"next","KA*":"home","RA*":"end","KHR*":"caps_lock","SKHR*":"scroll_lock","SP":"space","SPWR":"return","TPW":"tab","SPW":"backspace","TKHR":"delete","SKA":"escape","STPH":"insert","SKPR":"print","PH*":"menu","TPHO":""}}},"jeff-phrasing.py":{"hash":467204756947223,"longest":1,"t":{"NON_PHRASE_STROKES":{"STHR":true,"STHRET":true,"STHREUPLT":true,"STPHREFPLT":true,"SKPUR":true,"SKPUL":true,"SKPEUT":true,"SKP*":true},"STARTERS":{"SWR":["I","1ps",null],"KPWR":["you","2p",null],"KWHR":["he","3ps",null],"SKWHR":["she","3ps",null],"KPWH":["it","3ps",null],"TWR":["we","1pp",null],"TWH":["they","3pp",null],"STKH":["this","3ps",null],"STWH":["that","3ps",null],"STHR":["there","3ps",{"":true,"D":true,"B":true,"BT":true,"BD":true,"BTD":true,"BG":true,"BGD":true,"G":true,"GD":true,"PZ":true,"PDZ":true,"T":true,"TD":true,"TS":true,"TSDZ":true,"LZ":true,"LZD":true,"PL":true,"PLT":true,"PLD":true,"PLTD":true,"PBLGS":true,"PBLGTS":true,"PBLGSZ":true,"PBLGTSDZ":true,"RPG":true,"RPGD":true,"RPGT":true,"RPGTD":true,"RLG":true,"RLGD":true,"PLS":true,"PLSZ":true,"PLTS":true,"PLTSDZ":true,"Z":true,"DZ":true,"TZ":true,"TDZ":true}],"STPHR":["there","3pp",{"":true,"D":true,"B":true,"BT":true,"BD":true,"BTD":true,"BG":true,"BGD":true,"G":true,"GD":true,"PZ":true,"PDZ":true,"T":true,"TD":true,"TS":true,"TSDZ":true,"LZ":true,"LZD":true,"PL":true,"PLT":true,"PLD":true,"PLTD":true,"PBLGS":true,"PBLGTS":true,"PBLGSZ":true,"PBLGTSDZ":true,"RPG":true,"RPGD":true,"RPGT":true,"RPGTD":true,"RLG":true,"RLGD":true,"PLS":true,"PLSZ":true,"PLTS":true,"PLTSDZ":true,"Z":true,"DZ":true,"TZ":true,"TDZ":true}],"STKPWHR":["","b3ps",null],"STWR":["","b3pp",null]},"SIMPLE_STARTERS":{"STHA":[" that",null],"STPA":[" if",null],"SWH":[" when",null],"SWHA":[" what",null],"SWHR":[" where",null],"SWHO":[" who",null],"SWHAO":[" why",null],"SPWH":[" but",null],"STPR":[" for",null],"SKP":[" and",null]},"SIMPLE_PRONOUNS":{"E":["he","3ps",null],"*E":["she","3ps",null],"U":["you","2p",null],"*U":["they","3pp",null],"EU":["I","1ps",null],"*EU":["we","1pp",null],"*":["it","3ps",null]},"SIMPLE_STRUCTURES":{"":["* !",true,null],"F":[{"present":{"~none":"* ! have","3ps":"* ! has","present-participle":"* ! having","past-participle":"* ! had"},"past":{"root":"* ! have","~none":"* ! had","present-participle":"* ! having","past-participle":"* ! had"}},true,"past-participle"]},"MIDDLES":{"":{"present":{"~none":[" do","root"],"3ps":[" does","root"]},"past":[" did","root"]},"*":{"present":{"~none":[" don't","root"],"3ps":[" doesn't","root"]},"past":[" didn't","root"]},"A":{"present":[" can","root"],"past":[" could","root"]},"A*":{"present":[" can't","root"],"past":[" couldn't","root"]},"O":{"present":[" shall","root"],"past":[" should","root"]},"O*":{"present":[" shall not","root"],"past":[" shouldn't","root"]},"AO":{"present":[" will","root"],"past":[" would","root"]},"AO*":{"present":[" won't","root"],"past":[" wouldn't","root"]}},"STRUCTURE_EXCEPTIONS":{"":["!",false,null],"*E":[{"present":{"~none":"! aren't","1ps":"! am not","3ps":"! isn't"},"past":{"~none":"! weren't","1ps":"! wasn't","3ps":"! wasn't"}},false,"present-participle"],"E":[{"present":{"~none":"! are","1ps":"! am","3ps":"! is"},"past":{"~none":"! were","1ps":"! was","3ps":"! was"}},false,"present-participle"],"*F":[{"present":{"~none":"! haven't","3ps":"! hasn't"},"past":"! hadn't"},false,"past-participle"],"F":[{"present":{"~none":"! have","3ps":"! has"},"past":"! had"},false,"past-participle"],"*EF":[{"present":{"~none":"! haven't been","3ps":"! hasn't been"},"past":"! hadn't been"},false,"present-participle"],"EF":[{"present":{"~none":"! have been","3ps":"! has been"},"past":"! had been"},false,"present-participle"],"EU":["! still",false,null],"EUF":["! never",false,null],"UF":["! just",false,null],"STWRU":["to",false,"root"],"STWR*U":["not to",false,"root"],"STKPWHRU":["to",false,"root"],"STKPWHR*U":["not to",false,"root"]},"STRUCTURES":{"":["!*",true,null],"*":["!*",true,null],"*E":[{"present":{"~none":"!* are","root":"!* be","1ps":"!* am","3ps":"!* is","present-participle":"!* being","past-participle":"!* been"},"past":{"~none":"!* were","root":"!* be","1ps":"!* was","3ps":"!* was","present-participle":"!* being","past-participle":"!* been"}},true,"present-participle"],"E":[{"present":{"~none":"!* are","root":"!* be","1ps":"!* am","3ps":"!* is","present-participle":"!* being","past-participle":"!* been"},"past":{"~none":"!* were","root":"!* be","1ps":"!* was","3ps":"!* was","present-participle":"!* being","past-participle":"!* been"}},true,"present-participle"],"*EF":[{"present":{"~none":"!* have been","3ps":"!* has been","present-participle":"!* having been","past-participle":"!* had been"},"past":{"root":"!* have been","~none":"!* had been","present-participle":"!* having been","past-participle":"!* had been"}},true,"present-participle"],"EF":[{"present":{"~none":"!* have been","3ps":"!* has been","present-participle":"!* having been","past-participle":"!* had been"},"past":{"root":"!* have been","~none":"!* had been","present-participle":"!* having been","past-participle":"!* had been"}},true,"present-participle"],"*F":[{"present":{"~none":"!* have","3ps":"!* has","present-participle":"!* having","past-participle":"!* had"},"past":{"root":"!* have","~none":"!* had","present-participle":"!* having","past-participle":"!* had"}},true,"past-participle"],"F":[{"present":{"~none":"!* have","3ps":"!* has","present-participle":"!* having","past-participle":"!* had"},"past":{"root":"!* have","~none":"!* had","present-participle":"!* having","past-participle":"!* had"}},true,"past-participle"],"*EU":["! still*",true,null],"EU":["!* still",true,null],"*EUF":["!* even",true,null],"EUF":["!* never",true,null],"*U":[{"present":{"~none":"* !","b3ps-root":"* always","b3pp-root":"* always"},"past":{"~none":"* !","b3ps-root":"* always","b3pp-root":"* always"}},true,null],"U":[{"present":{"~none":"* !","b3ps-root":"* always","b3pp-root":"* always"},"past":{"~none":"* !","b3ps-root":"* always","b3pp-root":"* always"}},true,null],"*UF":["! just*",true,null],"UF":["!* just",true,null]},"ENDERS":{"":["present",""],"D":["past",""],"RB":["present",{"~none":" ask","3ps":" asks","present-participle":" asking","past-participle":" asked"}],"RBD":["past",{"~none":" asked","root":" ask","present-participle":" asking","past-participle":" asked"}],"B":["present",{"~none":" are","root":" be","1ps":" am","3ps":" is","present-participle":" being","past-participle":" been"}],"BT":["present",{"~none":" are a","root":" be a","1ps":" am a","3ps":" is a","present-participle":" being a","past-participle":" been a"}],"BD":["past",{"~none":" were","root":" be","1ps":" was","3ps":" was","present-participle":" being","past-participle":" been"}],"BTD":["past",{"~none":" were a","root":" be a","1ps":" was a","3ps":" was a","present-participle":" being a","past-participle":" been a"}],"RPBG":["present",{"~none":" become","3ps":" becomes","present-participle":" becoming","past-participle":" become"}],"RPBGT":["present",{"~none":" become a","3ps":" becomes a","present-participle":" becoming a","past-participle":" become a"}],"RPBGD":["past",{"~none":" became","root":" become","present-participle":" becoming","past-participle":" become"}],"RPBGTD":["past",{"~none":" became a","root":" become a","present-participle":" becoming a","past-participle":" become a"}],"BL":["present",{"~none":" believe","3ps":" believes","present-participle":" believing","past-participle":" believed"}],"BLT":["present",{"~none":" believe that","3ps":" believes that","present-participle":" believing that","past-participle":" believed that"}],"BLD":["past",{"~none":" believed","root":" believe","present-participle":" believing","past-participle":" believed"}],"BLTD":["past",{"~none":" believed that","root":" believe that","present-participle":" believing that","past-participle":" believed that"}],"RBLG":["present",{"~none":" call","3ps":" calls","present-participle":" calling","past-participle":" called"}],"RBLGD":["past",{"~none":" called","root":" call","present-participle":" calling","past-participle":" called"}],"BGS":["present"," can"],"BGSZ":["past"," could"],"RZ":["present",{"~none":" care","3ps":" cares","present-participle":" caring","past-participle":" cared"}],"RDZ":["past",{"~none":" cared","root":" care","present-participle":" caring","past-participle":" cared"}],"PBGZ":["present",{"~none":" change","3ps":" changes","present-participle":" changing","past-participle":" changed"}],"PBGDZ":["past",{"~none":" changed","root":" change","present-participle":" changing","past-participle":" changed"}],"BG":["present",{"~none":" come","3ps":" comes","present-participle":" coming","past-participle":" come"}],"BGT":["present",{"~none":" come to","3ps":" comes to","present-participle":" coming to","past-participle":" come to"}],"BGD":["past",{"~none":" came","root":" come","present-participle":" coming","past-participle":" come"}],"BGTD":["past",{"~none":" came to","root":" come to","present-participle":" coming to","past-participle":" come to"}],"RBGZ":["present",{"~none":" consider","3ps":" considers","present-participle":" considering","past-participle":" considered"}],"RBGDZ":["past",{"~none":" considered","root":" consider","present-participle":" considering","past-participle":" considered"}],"RP":["present",{"~none":" do","3ps":" does","present-participle":" doing","past-participle":" done"}],"RPT":["present",{"~none":" do it","3ps":" does it","present-participle":" doing it","past-participle":" done it"}],"RPD":["past",{"~none":" did","root":" do","present-participle":" doing","past-participle":" done"}],"RPTD":["past",{"~none":" did it","root":" do it","present-participle":" doing it","past-participle":" done it"}],"PGS":["present",{"~none":" expect","3ps":" expects","present-participle":" expecting","past-participle":" expected"}],"PGTS":["present",{"~none":" expect that","3ps":" expects that","present-participle":" expecting that","past-participle":" expected that"}],"PGSZ":["past",{"~none":" expected","root":" expect","present-participle":" expecting","past-participle":" expected"}],"PGTSDZ":["past",{"~none":" expected that","root":" expect that","present-participle":" expecting that","past-participle":" expected that"}],"LT":["present",{"~none":" feel","3ps":" feels","present-participle":" feeling","past-participle":" felt"}],"LTS":["present",{"~none":" feel like","3ps":" feels like","present-participle":" feeling like","past-participle":" felt like"}],"LTD":["past",{"~none":" felt","root":" feel","present-participle":" feeling","past-participle":" felt"}],"LTSDZ":["past",{"~none":" felt like","root":" feel like","present-participle":" feeling like","past-participle":" felt like"}],"PBLG":["present",{"~none":" find","3ps":" finds","present-participle":" finding","past-participle":" found"}],"PBLGT":["present",{"~none":" find that","3ps":" finds that","present-participle":" finding that","past-participle":" found that"}],"PBLGD":["past",{"~none":" found","root":" find","present-participle":" finding","past-participle":" found"}],"PBLGTD":["past",{"~none":" found that","root":" find that","present-participle":" finding that","past-participle":" found that"}],"RG":["present",{"~none":" forget","3ps":" forgets","present-participle":" forgetting","past-participle":" forgotten"}],"RGT":["present",{"~none":" forget to","3ps":" forgets to","present-participle":" forgetting to","past-participle":" forgotten to"}],"RGD":["past",{"~none":" forgot","root":" forget","present-participle":" forgetting","past-participle":" forgotten"}],"RGTD":["past",{"~none":" forgot to","root":" forget to","present-participle":" forgetting to","past-participle":" forgotten to"}],"GS":["present",{"~none":" get","3ps":" gets","present-participle":" getting","past-participle":" got"}],"GTS":["present",{"~none":" get to","3ps":" gets to","present-participle":" getting to","past-participle":" got to"}],"GSZ":["past",{"~none":" got","root":" get","present-participle":" getting","past-participle":" got"}],"GTSDZ":["past",{"~none":" got to","root":" get to","present-participle":" getting to","past-participle":" got to"}],"GZ":["present",{"~none":" give","3ps":" gives","present-participle":" giving","past-participle":" given"}],"GDZ":["past",{"~none":" gave","root":" give","present-participle":" giving","past-participle":" given"}],"G":["present",{"~none":" go","3ps":" goes","present-participle":" going","past-participle":" gone"}],"GT":["present",{"~none":" go to","3ps":" goes to","present-participle":" going to","past-participle":" gone to"}],"GD":["past",{"~none":" went","root":" go","present-participle":" going","past-participle":" gone"}],"GTD":["past",{"~none":" went to","root":" go to","present-participle":" going to","past-participle":" gone to"}],"T":["present",{"~none":" have","3ps":" has","present-participle":" having","past-participle":" had"}],"TS":["present",{"~none":" have to","3ps":" has to","present-participle":" having to","past-participle":" had to"}],"TD":["past",{"~none":" had","root":" have","present-participle":" having","past-participle":" had"}],"TSDZ":["past",{"~none":" had to","root":" have to","present-participle":" having to","past-participle":" had to"}],"PZ":["present",{"~none":" happen","3ps":" happens","present-participle":" happening","past-participle":" happened"}],"PDZ":["past",{"~none":" happened","root":" happen","present-participle":" happening","past-participle":" happened"}],"PG":["present",{"~none":" hear","3ps":" hears","present-participle":" hearing","past-participle":" heard"}],"PGT":["present",{"~none":" hear that","3ps":" hears that","present-participle":" hearing that","past-participle":" heard that"}],"PGD":["past",{"~none":" heard","root":" hear","present-participle":" hearing","past-participle":" heard"}],"PGTD":["past",{"~none":" heard that","root":" hear that","present-participle":" hearing that","past-participle":" heard that"}],"RPS":["present",{"~none":" hope","3ps":" hopes","present-participle":" hoping","past-participle":" hoped"}],"RPTS":["present",{"~none":" hope to","3ps":" hopes to","present-participle":" hoping to","past-participle":" hoped to"}],"RPSZ":["past",{"~none":" hoped","root":" hope","present-participle":" hoping","past-participle":" hoped"}],"RPTSDZ":["past",{"~none":" hoped to","root":" hope to","present-participle":" hoping to","past-participle":" hoped to"}],"PLG":["present",{"~none":" imagine","3ps":" imagines","present-participle":" imagining","past-participle":" imagined"}],"PLGT":["present",{"~none":" imagine that","3ps":" imagines that","present-participle":" imagining that","past-participle":" imagined that"}],"PLGD":["past",{"~none":" imagined","root":" imagine","present-participle":" imagining","past-participle":" imagined"}],"PLGTD":["past",{"~none":" imagined that","root":" imagine that","present-participle":" imagining that","past-participle":" imagined that"}],"PBLGSZ":["present"," just"],"PBLGTSDZ":["past"," just"],"PBGS":["present",{"~none":" keep","3ps":" keeps","present-participle":" keeping","past-participle":" kept"}],"PBGSZ":["past",{"~none":" kept","root":" keep","present-participle":" keeping","past-participle":" kept"}],"PB":["present",{"~none":" know","3ps":" knows","present-participle":" knowing","past-participle":" known"}],"PBT":["present",{"~none":" know that","3ps":" knows that","present-participle":" knowing that","past-participle":" known that"}],"PBD":["past",{"~none":" knew","root":" know","present-participle":" knowing","past-participle":" known"}],"PBTD":["past",{"~none":" knew that","root":" know that","present-participle":" knowing that","past-participle":" known that"}],"RPBS":["present",{"~none":" learn","3ps":" learns","present-participle":" learning","past-participle":" learned"}],"RPBTS":["present",{"~none":" learn to","3ps":" learns to","present-participle":" learning to","past-participle":" learned to"}],"RPBSZ":["past",{"~none":" learned","root":" learn","present-participle":" learning","past-participle":" learned"}],"RPBTSDZ":["past",{"~none":" learned to","root":" learn to","present-participle":" learning to","past-participle":" learned to"}],"LGZ":["present",{"~none":" leave","3ps":" leaves","present-participle":" leaving","past-participle":" left"}],"LGDZ":["past",{"~none":" left","root":" leave","present-participle":" leaving","past-participle":" left"}],"LS":["present",{"~none":" let","3ps":" lets","present-participle":" letting","past-participle":" let"}],"LSZ":["past",{"~none":" let","present-participle":" letting","past-participle":" let"}],"BLG":["present",{"~none":" like","3ps":" likes","present-participle":" liking","past-participle":" liked"}],"BLGT":["present",{"~none":" like to","3ps":" likes to","present-participle":" liking to","past-participle":" liked to"}],"BLGD":["past",{"~none":" liked","root":" like","present-participle":" liking","past-participle":" liked"}],"BLGTD":["past",{"~none":" liked to","root":" like to","present-participle":" liking to","past-participle":" liked to"}],"LZ":["present",{"~none":" live","3ps":" lives","present-participle":" living","past-participle":" lived"}],"LDZ":["past",{"~none":" lived","root":" live","present-participle":" living","past-participle":" lived"}],"L":["present",{"~none":" look","3ps":" looks","present-participle":" looking","past-participle":" looked"}],"LD":["past",{"~none":" looked","root":" look","present-participle":" looking","past-participle":" looked"}],"LG":["present",{"~none":" love","3ps":" loves","present-participle":" loving","past-participle":" loved"}],"LGT":["present",{"~none":" love to","3ps":" loves to","present-participle":" loving to","past-participle":" loved to"}],"LGD":["past",{"~none":" loved","root":" love","present-participle":" loving","past-participle":" loved"}],"LGTD":["past",{"~none":" loved to","root":" love to","present-participle":" loving to","past-participle":" loved to"}],"RPBL":["present",{"~none":" make","3ps":" makes","present-participle":" making","past-participle":" made"}],"RPBLT":["present",{"~none":" make a","3ps":" makes a","present-participle":" making a","past-participle":" made a"}],"RPBLD":["past",{"~none":" made","root":" make","present-participle":" making","past-participle":" made"}],"RPBLTD":["past",{"~none":" made a","root":" make a","present-participle":" making a","past-participle":" made a"}],"PL":["present"," may"],"PLT":["present"," may be"],"PLD":["past"," might"],"PLTD":["past"," might be"],"PBL":["present",{"~none":" mean","3ps":" means","present-participle":" meaning","past-participle":" meant"}],"PBLT":["present",{"~none":" mean to","3ps":" means to","present-participle":" meaning to","past-participle":" meant to"}],"PBLD":["past",{"~none":" meant","root":" mean","present-participle":" meaning","past-participle":" meant"}],"PBLTD":["past",{"~none":" meant to","root":" mean to","present-participle":" meaning to","past-participle":" meant to"}],"PBLS":["present",{"~none":" mind","3ps":" minds","present-participle":" minding","past-participle":" minded"}],"PBLSZ":["past",{"~none":" minded","root":" mind","present-participle":" minding","past-participle":" minded"}],"PLZ":["present",{"~none":" move","3ps":" moves","present-participle":" moving","past-participle":" moved"}],"PLDZ":["past",{"~none":" moved","root":" move","present-participle":" moving","past-participle":" moved"}],"PBLGS":["present"," must"],"PBLGTS":["present"," must be"],"RPG":["present",{"~none":" need","3ps":" needs","present-participle":" needing","past-participle":" needed"}],"RPGT":["present",{"~none":" need to","3ps":" needs to","present-participle":" needing to","past-participle":" needed to"}],"RPGD":["past",{"~none":" needed","root":" need","present-participle":" needing","past-participle":" needed"}],"RPGTD":["past",{"~none":" needed to","root":" need to","present-participle":" needing to","past-participle":" needed to"}],"PS":["present",{"~none":" put","3ps":" puts","present-participle":" putting","past-participle":" put"}],"PTS":["present",{"~none":" put it","3ps":" puts it","present-participle":" putting it","past-participle":" put it"}],"PSZ":["past",{"~none":" put","root":" put","present-participle":" putting","past-participle":" put"}],"PTSDZ":["past",{"~none":" put it","root":" put it","present-participle":" putting it","past-participle":" put it"}],"RS":["present",{"~none":" read","3ps":" reads","present-participle":" reading","past-participle":" read"}],"RSZ":["past",{"~none":" read","root":" read","present-participle":" reading","past-participle":" read"}],"RLG":["present"," really"],"RLGD":["past"," really"],"RL":["present",{"~none":" recall","3ps":" recalls","present-participle":" recalling","past-participle":" recalled"}],"RLD":["past",{"~none":" recalled","root":" recall","present-participle":" recalling","past-participle":" recalled"}],"RLS":["present",{"~none":" realize","3ps":" realizes","present-participle":" realizing","past-participle":" realized"}],"RLTS":["present",{"~none":" realize that","3ps":" realizes that","present-participle":" realizing that","past-participle":" realized that"}],"RLSZ":["past",{"~none":" realized","root":" realize","present-participle":" realizing","past-participle":" realized"}],"RLTSDZ":["past",{"~none":" realized that","root":" realize that","present-participle":" realizing that","past-participle":" realized that"}],"RPL":["present",{"~none":" remember","3ps":" remembers","present-participle":" remembering","past-participle":" remembered"}],"RPLT":["present",{"~none":" remember that","3ps":" remembers that","present-participle":" remembering that","past-participle":" remembered that"}],"RPLD":["past",{"~none":" remembered","root":" remember","present-participle":" remembering","past-participle":" remembered"}],"RPLTD":["past",{"~none":" remembered that","root":" remember that","present-participle":" remembering that","past-participle":" remembered that"}],"RPLS":["present",{"~none":" remain","3ps":" remains","present-participle":" remaining","past-participle":" remained"}],"RPLSZ":["past",{"~none":" remained","root":" remain","present-participle":" remaining","past-participle":" remained"}],"R":["present",{"~none":" run","3ps":" runs","present-participle":" running","past-participle":" run"}],"RD":["past",{"~none":" ran","root":" run","present-participle":" running","past-participle":" run"}],"BS":["present",{"~none":" say","3ps":" says","present-participle":" saying","past-participle":" said"}],"BTS":["present",{"~none":" say that","3ps":" says that","present-participle":" saying that","past-participle":" said that"}],"BSZ":["past",{"~none":" said","root":" say","present-participle":" saying","past-participle":" said"}],"BTSDZ":["past",{"~none":" said that","root":" say that","present-participle":" saying that","past-participle":" said that"}],"S":["present",{"~none":" see","3ps":" sees","present-participle":" seeing","past-participle":" seen"}],"SZ":["past",{"~none":" saw","root":" see","present-participle":" seeing","past-participle":" seen"}],"BLS":["present",{"~none":" set","3ps":" sets","present-participle":" setting","past-participle":" set"}],"BLSZ":["past",{"~none":" set","root":" set","present-participle":" setting","past-participle":" set"}],"PLS":["present",{"~none":" seem","3ps":" seems","present-participle":" seeming","past-participle":" seemed"}],"PLTS":["present",{"~none":" seem to","3ps":" seems to","present-participle":" seeming to","past-participle":" seemed to"}],"PLSZ":["past",{"~none":" seemed","root":" seem","present-participle":" seeming","past-participle":" seemed"}],"PLTSDZ":["past",{"~none":" seemed to","root":" seem to","present-participle":" seeming to","past-participle":" seemed to"}],"RBL":["present"," shall"],"RBLD":["past"," should"],"RBZ":["present",{"~none":" show","3ps":" shows","present-participle":" showing","past-participle":" shown"}],"RBDZ":["past",{"~none":" showed","root":" show","present-participle":" showing","past-participle":" shown"}],"RBT":["present",{"~none":" take","3ps":" takes","present-participle":" taking","past-participle":" taken"}],"RBTD":["past",{"~none":" took","root":" take","present-participle":" taking","past-participle":" taken"}],"RLT":["present",{"~none":" tell","3ps":" tells","present-participle":" telling","past-participle":" told"}],"RLTD":["past",{"~none":" told","root":" tell","present-participle":" telling","past-participle":" told"}],"PBG":["present",{"~none":" think","3ps":" thinks","present-participle":" thinking","past-participle":" thought"}],"PBGT":["present",{"~none":" think that","3ps":" thinks that","present-participle":" thinking that","past-participle":" thought that"}],"PBGD":["past",{"~none":" thought","root":" think","present-participle":" thinking","past-participle":" thought"}],"PBGTD":["past",{"~none":" thought that","root":" think that","present-participle":" thinking that","past-participle":" thought that"}],"RT":["present",{"~none":" try","3ps":" tries","present-participle":" trying","past-participle":" tried"}],"RTS":["present",{"~none":" try to","3ps":" tries to","present-participle":" trying to","past-participle":" tried to"}],"RTD":["past",{"~none":" tried","root":" try","present-participle":" trying","past-participle":" tried"}],"RTSDZ":["past",{"~none":" tried to","root":" try to","present-participle":" trying to","past-participle":" tried to"}],"RPB":["present",{"~none":" understand","3ps":" understands","present-participle":" understanding","past-participle":" understood"}],"RPBT":["present",{"~none":" understand the","3ps":" understands the","present-participle":" understanding the","past-participle":" understood the"}],"RPBD":["past",{"~none":" understood","root":" understand","present-participle":" understanding","past-participle":" understood"}],"RPBTD":["past",{"~none":" understood the","root":" understand the","present-participle":" understanding the","past-participle":" understood the"}],"Z":["present",{"~none":" use","3ps":" uses","present-participle":" using","past-participle":" used"}],"DZ":["past",{"~none":" used","root":" use","present-participle":" using","past-participle":" used"}],"TZ":["present"," used to"],"TDZ":["past"," used to"],"P":["present",{"~none":" want","3ps":" wants","present-participle":" wanting","past-participle":" wanted"}],"PT":["present",{"~none":" want to","3ps":" wants to","present-participle":" wanting to","past-participle":" wanted to"}],"PD":["past",{"~none":" wanted","root":" want","present-participle":" wanting","past-participle":" wanted"}],"PTD":["past",{"~none":" wanted to","root":" want to","present-participle":" wanting to","past-participle":" wanted to"}],"RBGS":["present"," will"],"RBGSZ":["past"," would"],"RBS":["present",{"~none":" wish","3ps":" wishes","present-participle":" wishing","past-participle":" wished"}],"RBTS":["present",{"~none":" wish to","3ps":" wishes to","present-participle":" wishing to","past-participle":" wished to"}],"RBSZ":["past",{"~none":" wished","root":" wish","present-participle":" wishing","past-participle":" wished"}],"RBTSDZ":["past",{"~none":" wished to","root":" wish to","present-participle":" wishing to","past-participle":" wished to"}],"RBG":["present",{"~none":" work","3ps":" works","present-participle":" working","past-participle":" worked"}],"RBGT":["present",{"~none":" work on","3ps":" works on","present-participle":" working on","past-participle":" worked on"}],"RBGD":["past",{"~none":" worked","root":" work","present-participle":" working","past-participle":" worked"}],"RBGTD":["past",{"~none":" worked on","root":" work on","present-participle":" working on","past-participle":" worked on"}]}}}};
+  var NONE = '~none';
+  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function cyrb53(str) {
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  }
+  var F = {};
+
+  F['emily-symbols.py'] = function (t) {
+    var NUM = ['O', 'S', 'T', 'P', 'H', 'A', 'F', 'P', 'L', 'T'], RE = /^([#STKPWHR]*)([AO]*)([*-]?)([EU]*)([FRPBLG]*)([TS]*)$/, space = t.attachmentMethod === 'space';
+    return function (chord) {
+      var stroke = chord[0];
+      if (/[0-9]/.test(stroke)) stroke = '#' + stroke.replace(/[0-9]/g, function (d) { return NUM[+d]; });
+      var m = RE.exec(stroke); if (!m) return;
+      if (t.uniqueStarters.indexOf(m[1]) < 0 || chord.length !== 1) return;
+      var attach = [space !== (m[2].indexOf('A') >= 0), space !== (m[2].indexOf('O') >= 0)];
+      var variant = (m[4].indexOf('E') >= 0 ? 1 : 0) + (m[4].indexOf('U') >= 0 ? 2 : 0), repeat = 1 + (m[6].indexOf('S') >= 0 ? 1 : 0) + (m[6].indexOf('T') >= 0 ? 2 : 0);
+      var set = t.symbols[m[1]]; if (!has(set, m[5])) return;
+      var sel = set[m[5]]; if (Array.isArray(sel)) sel = sel[variant];
+      var out = ''; for (var i = 0; i < repeat; i++) out += sel;
+      var retro = sel === '{*!}' || sel === '{*?}';
+      if (!retro) { out = ' ' + out + ' '; if (attach[0]) out = '{^}' + out; if (attach[1]) out = out + '{^}'; }
+      if (space) { if (!attach[0]) out = '{}' + out; if (!attach[1]) out = out + '{}'; }
+      if (m[3] === '*') out += '{-|}';
+      return out;
+    };
+  };
+
+  F['emily-modifiers.py'] = function (t) {
+    var RE = /^([#STKPWHR]*)([AO]*)([*-]*)([EU]*)([FRPB]*)([LGTSDZ]*)$/;
+    return function (chord) {
+      if (chord.length !== 1) return;
+      var m = RE.exec(chord[0]); if (!m) return;
+      var pattern = m[1] + m[2] + m[4], character;
+      if (t.uniqueEnders.indexOf(m[6]) < 0) return;
+      if (pattern === '') character = '';
+      else if (m[3].indexOf('*') >= 0) {
+        var s = /^([STKPWHR]*)([AO]*)([EU]*)$/.exec(pattern); if (!s) return;
+        if (!has(t.symbols, s[1])) return;
+        var variant = (s[2].indexOf('A') >= 0 ? 1 : 0) + (s[2].indexOf('O') >= 0 ? 2 : 0), entry = t.symbols[s[1]];
+        if (Array.isArray(entry)) { character = entry[variant]; if (character === '') return; } else character = entry;
+      } else {
+        var n = /^([STKPWHR]*)([AO]*)([-EU]*)$/.exec(pattern); if (!n) return;
+        var shape = n[1];
+        if (n[2] === 'AO' && n[3] === '') {
+          var count = (shape.indexOf('R') >= 0 ? 1 : 0) + (shape.indexOf('W') >= 0 ? 2 : 0) + (shape.indexOf('K') >= 0 ? 4 : 0) + (shape.indexOf('S') >= 0 ? 8 : 0);
+          if (shape.indexOf('T') >= 0 && shape.indexOf('P') >= 0) { if (count > 12) return; character = 'F' + count; }
+          else { if (count > 9) return; character = String(count); }
+        } else {
+          var e = shape + n[2] + n[3]; if (!has(t.spelling, e)) return;
+          character = t.spelling[e]; if (character === '') return;
+        }
+      }
+      var mk = m[5]; if (!mk.length) return;
+      var combo = character;
+      [['R', 'shift'], ['B', 'alt'], ['P', 'super'], ['F', 'control']].forEach(function (p) { if (mk.indexOf(p[0]) >= 0) combo = p[1] + '(' + combo + ')'; });
+      return '{^}{#' + combo + '}{^}';
+    };
+  };
+
+  F['abby-left-hand-modifiers.py'] = function (t) {
+    return function (outline) {
+      if (outline.length > 2) return;
+      var mods = t.modifiers.indexOf(outline[0]); if (mods < 0) return;
+      if (outline.length === 1) return '{#}';
+      var s2 = outline[1]; if (s2 === 'SKPH') return '{#}';
+      if (!has(t.keys, s2)) return;
+      var key = t.keys[s2];
+      if (mods & 8) key = 'super_l(' + key + ')';
+      if (mods & 4) key = 'shift_l(' + key + ')';
+      if (mods & 2) key = 'alt_l(' + key + ')';
+      if (mods & 1) key = 'control_l(' + key + ')';
+      return ('{#' + key + '}').split('()').join('');
+    };
+  };
+
+  F['jeff-phrasing.py'] = function (t) {
+    var RE = /^(S?T?K?P?W?H?R?)(A?O?)-?(\*?)(E?U?)(F?)(R?P?B?L?G?T?S?D?Z?)/;
+    function isDict(x) { return x !== null && typeof x === 'object' && !Array.isArray(x); }
+    function get(d, k) { return has(d, k) && d[k] !== null ? d[k] : undefined; }
+    function step(data, key) {
+      if (!isDict(data)) return data;
+      var r = get(data, key); if (r !== undefined) return r;
+      if (key.indexOf('-') >= 0) { key = key.split('-')[1]; r = get(data, key); if (r !== undefined) return r; }
+      if (key[0] === 'b') { r = get(data, key.slice(1)); if (r !== undefined) return r; }
+      return has(data, NONE) ? data[NONE] : null;
+    }
+    function look(data) { for (var i = 1; i < arguments.length; i++) data = step(data, arguments[i]); return data; }
+    return function (chord) {
+      var stroke = chord[0];
+      if (has(t.NON_PHRASE_STROKES, stroke)) return;
+      var m = RE.exec(stroke), sk = m[1], v1 = m[2], star = m[3], v2 = m[4], f = m[5], ek = m[6];
+      if (!has(t.ENDERS, ek)) return;
+      var ender = t.ENDERS[ek], starterL, middleL, structL;
+      if (has(t.SIMPLE_STARTERS, sk + v1) && has(t.SIMPLE_PRONOUNS, star + v2)) { starterL = t.SIMPLE_PRONOUNS[star + v2]; middleL = t.SIMPLE_STARTERS[sk + v1]; structL = t.SIMPLE_STRUCTURES[f]; }
+      else {
+        if (!has(t.STARTERS, sk)) return;
+        starterL = t.STARTERS[sk];
+        if (starterL[2] && !has(starterL[2], ek)) return;
+        middleL = t.MIDDLES[v1 + star];
+        structL = has(t.STRUCTURE_EXCEPTIONS, sk + v1 + star + v2 + f) ? t.STRUCTURE_EXCEPTIONS[sk + v1 + star + v2 + f] : has(t.STRUCTURE_EXCEPTIONS, v1 + star + v2 + f) ? t.STRUCTURE_EXCEPTIONS[v1 + star + v2 + f] : t.STRUCTURES[star + v2 + f];
+      }
+      var starter = starterL[0], form = starterL[1], tense = ender[0], verb = ender[1];
+      var mid = look(middleL, tense, form), st = look(structL, tense, form), orig = form;
+      if (st[1] && mid[1]) form = mid[1];
+      var fmt = look(st[0], tense, orig + '-' + form); if (typeof fmt !== 'string') return;
+      var at = fmt.indexOf('*'); if (at >= 0) fmt = fmt.slice(0, at) + mid[0] + fmt.slice(at + 1);
+      var phrase = fmt.split('!').join(starter);
+      if (st[2]) form = st[2];
+      var ending = look(verb, form); if (ending === null || ending === undefined) return;
+      return phrase + ending;
+    };
+  };
+
+  return {
+    // a lookup function for this file if it is one of the versions ported here, otherwise null
+    match: function (name, src) {
+      var h = cyrb53(String(src).replace(/\r\n/g, '\n'));
+      for (var k in T) if (T[k].hash === h) return { longest: T[k].longest, fn: F[k](T[k].t), port: k };
+      return null;
+    },
+    _all: function () { var o = {}; for (var k in T) o[k] = { longest: T[k].longest, fn: F[k](T[k].t) }; return o; }
+  };
+})();
+
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var KEYS = StenoEngine.KEYS, BIT = {}; KEYS.forEach(function (k, i) { BIT[k] = 1 << i; });
+  var eng = new StenoEngine('Lapwing');
+  var PY_URL = window.RINGS_PYODIDE || 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+  var LAPWING_ORDER = ['user.json', 'jeff-phrasing.py', 'abby-left-hand-modifiers.py', 'emily-modifiers.py', 'emily-symbols.py', 'lapwing-movement.modal', 'lapwing-commands.json', 'lapwing-numbers.json', 'lapwing-uk-additions.json', 'lapwing-proper-nouns.json', 'lapwing-base.json'];
+  var PLOVER_ORDER = ['user.json', 'commands.json', 'main.json'];
+  var opt = { size: 'm', height: 'm', wait: 260, hints: true, tap: true, buzz: true, cap: false, arp: false };
+  var lib = { system: 'Lapwing', stacks: { 'Lapwing': [], 'English Stenotype': [] } };   // entries: {id, name, kind, enabled}
+  var built = {};      // id -> engine dictionary object (or {error})
+  var ed = { text: '', cur: 0, anchor: null };
+  var tape = [], ready = false;
+
+  /* ---------- small storage layer: IndexedDB when available, memory otherwise ---------- */
+  var mem = {}, dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res) {
+      try { var r = indexedDB.open('rings-steno', 1); r.onupgradeneeded = function () { r.result.createObjectStore('kv'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { res(null); }; }
+      catch (e) { res(null); }
+    });
+    return dbp;
+  }
+  function dbGet(k) { return db().then(function (d) { if (!d) return mem[k]; return new Promise(function (res) { try { var q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = function () { res(q.result); }; q.onerror = function () { res(mem[k]); }; } catch (e) { res(mem[k]); } }); }); }
+  function dbSet(k, v) { mem[k] = v; return db().then(function (d) { if (!d) return; try { var s = d.transaction('kv', 'readwrite').objectStore('kv'); if (v === undefined) s.delete(k); else s.put(v, k); } catch (e) {} }); }
+  function saveMeta() { dbSet('meta', { lib: lib, opt: opt }); }
+
+  /* ---------- feedback ---------- */
+  function buzz(p) { if (!opt.buzz) return; try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  var toastTimer = 0;
+  function toast(msg, bad, sticky) { var t = $('toast'); t.textContent = msg || ''; t.className = 'toast' + (bad ? ' bad' : ''); clearTimeout(toastTimer); if (msg && !sticky) toastTimer = setTimeout(function () { t.textContent = ''; }, 3200); }
+  function status(msg, bad) { var el = $('libStatus'); el.textContent = msg || ''; el.className = 'status' + (bad ? ' bad' : ''); toast(msg, bad); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ---------- the page being written: text, cursor, selection ---------- */
+  function sel() { return ed.anchor === null || ed.anchor === ed.cur ? null : [Math.min(ed.anchor, ed.cur), Math.max(ed.anchor, ed.cur)]; }
+  function replaceSel(s) { var r = sel(); if (r) { ed.text = ed.text.slice(0, r[0]) + ed.text.slice(r[1]); ed.cur = r[0]; } ed.anchor = null; ed.text = ed.text.slice(0, ed.cur) + s + ed.text.slice(ed.cur); ed.cur += s.length; }
+  function wordLeft(i) { var t = ed.text; while (i > 0 && /\s/.test(t[i - 1])) i--; while (i > 0 && !/\s/.test(t[i - 1])) i--; return i; }
+  function wordRight(i) { var t = ed.text; while (i < t.length && /\s/.test(t[i])) i++; while (i < t.length && !/\s/.test(t[i])) i++; return i; }
+  function lineStart(i) { return ed.text.lastIndexOf('\n', i - 1) + 1; }
+  function lineEnd(i) { var e = ed.text.indexOf('\n', i); return e < 0 ? ed.text.length : e; }
+  function move(to, shift) { if (shift) { if (ed.anchor === null) ed.anchor = ed.cur; } else ed.anchor = null; ed.cur = Math.max(0, Math.min(ed.text.length, to)); }
+  function key(name, mods) {
+    var n = name.toLowerCase(), ctrl = mods.indexOf('control') >= 0 || mods.indexOf('super') >= 0 || mods.indexOf('alt') >= 0 && /left|right|backspace|delete/.test(n), shift = mods.indexOf('shift') >= 0, r = sel(), col;
+    if (n === 'return' || n === 'kp_enter' || n === 'enter') replaceSel('\n');
+    else if (n === 'tab') replaceSel('\t'); else if (n === 'space') replaceSel(' ');
+    else if (n === 'backspace') { if (r) replaceSel(''); else { var to = ctrl ? wordLeft(ed.cur) : ed.cur - 1; if (to >= 0) { ed.text = ed.text.slice(0, to) + ed.text.slice(ed.cur); ed.cur = to; } } }
+    else if (n === 'delete') { if (r) replaceSel(''); else { var e2 = ctrl ? wordRight(ed.cur) : ed.cur + 1; ed.text = ed.text.slice(0, ed.cur) + ed.text.slice(e2); } }
+    else if (n === 'left') move(ctrl ? wordLeft(ed.cur) : (r && !shift ? r[0] : ed.cur - 1), shift);
+    else if (n === 'right') move(ctrl ? wordRight(ed.cur) : (r && !shift ? r[1] : ed.cur + 1), shift);
+    else if (n === 'home') move(ctrl ? 0 : lineStart(ed.cur), shift); else if (n === 'end') move(ctrl ? ed.text.length : lineEnd(ed.cur), shift);
+    else if (n === 'up') { col = ed.cur - lineStart(ed.cur); var ps = lineStart(ed.cur); if (ps === 0) move(0, shift); else { var pps = lineStart(ps - 1); move(Math.min(pps + col, ps - 1), shift); } }
+    else if (n === 'down') { col = ed.cur - lineStart(ed.cur); var le = lineEnd(ed.cur); if (le >= ed.text.length) move(ed.text.length, shift); else move(Math.min(le + 1 + col, lineEnd(le + 1)), shift); }
+    else if (n === 'page_up' || n === 'prior') move(0, shift); else if (n === 'page_down' || n === 'next') move(ed.text.length, shift);
+    else if (n === 'escape') ed.anchor = null;
+    else if (ctrl && n === 'a') { ed.anchor = 0; ed.cur = ed.text.length; }
+    else if (ctrl && (n === 'c' || n === 'x')) { if (r) { copy(ed.text.slice(r[0], r[1])); if (n === 'x') replaceSel(''); } }
+    else if (!ctrl && name.length === 1) replaceSel(shift ? name.toUpperCase() : name);
+    else toast('Key command for another app: ' + (mods.length ? mods.join('+') + '+' : '') + name);
+  }
+  // Plover key combo syntax: names separated by spaces, modifiers wrap what they hold: Control_L(Shift_L(Left)) a b
+  function combo(str) {
+    var toks = str.match(/[A-Za-z0-9_]+|\(|\)/g) || [], i = 0;
+    (function run(mods) {
+      while (i < toks.length) {
+        var t = toks[i++];
+        if (t === ')') return; if (t === '(') continue;
+        if (toks[i] === '(') { i++; run(mods.concat([t.toLowerCase().replace(/_[lr]$/, '')])); } else key(t, mods);
+      }
+    })([]);
+  }
+  function applyOps(ops) {
+    ops.forEach(function (op) {
+      if (op[0] === 'bs') { if (sel()) replaceSel(''); else { var n = Math.min(op[1], ed.cur); ed.text = ed.text.slice(0, ed.cur - n) + ed.text.slice(ed.cur); ed.cur -= n; } }
+      else if (op[0] === 'str') replaceSel(op[1]);
+      else if (op[0] === 'combo') combo(op[1]);
+      else command(op[1]);
+    });
+  }
+  function command(c) {
+    var i = c.indexOf(':'), name = (i < 0 ? c : c.slice(0, i)).toLowerCase(), arg = i < 0 ? '' : c.slice(i + 1);
+    if (name === 'lookup') openLookup(); else if (name === 'add_translation') { openLibrary(); $('addTr').hidden = false; } else if (name === 'configure') show('settings', true);
+    else if (name === 'toggle_dict' || name === 'priority_dict' || name === 'solo_dict' || name === 'end_solo_dict') dictCommand(name, arg);
+    else if (name === 'focus') { /* this page is always in focus */ }
+    else toast('Plover command: ' + c);
+  }
+  function copy(text) { try { navigator.clipboard.writeText(text).then(function () { toast('Copied'); }, function () { toast('Copying is blocked here.', true); }); } catch (e) { toast('Copying is blocked here.', true); } }
+  function renderPage() {
+    var t = ed.text, r = sel(), C = '<span class="caret" id="caret"></span>';
+    if (!t) { $('page').innerHTML = C + '<span class="coach"> ' + (stack().length ? 'Stroke something. The paper tape below shows what each stroke became.' : 'No dictionaries yet. Tap ' + esc(lib.system === 'Lapwing' ? 'Lapwing' : 'Plover') + ' at the top to add them. Strokes will print as raw steno until then.') + '</span>'; return; }
+    var html = r ? esc(t.slice(0, r[0])) + (ed.cur === r[0] ? C : '') + '<span class="sel">' + esc(t.slice(r[0], r[1])) + '</span>' + (ed.cur === r[1] ? C : '') + esc(t.slice(r[1])) : esc(t.slice(0, ed.cur)) + C + esc(t.slice(ed.cur));
+    $('page').innerHTML = html;
+    var c = $('caret'); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' });
+  }
+
+  /* ---------- paper tape ---------- */
+  function tapeLine(mask) { var s = ''; for (var i = 0; i < KEYS.length; i++) s += mask & (1 << i) ? KEYS[i].replace('-', '') : ' '; return s; }
+  function renderTape(liveMask) {
+    var rows = tape.slice(opt.height === 'l' ? -3 : (liveMask ? -1 : -2)), html = '<div class="trow head"><span class="st">' + KEYS.map(function (k) { return k.replace('-', ''); }).join('') + '</span><span class="tr">paper tape</span></div>';
+    rows.forEach(function (r) { html += '<div class="trow"><span class="st">' + esc(tapeLine(r.mask)) + '</span><span class="tr' + (r.undo ? ' u' : '') + '">' + esc(r.text) + '</span></div>'; });
+    if (liveMask) html += '<div class="trow live"><span class="st">' + esc(tapeLine(liveMask)) + '</span><span class="tr">' + esc(eng.system.steno(liveMask)) + '</span></div>';
+    $('tape').innerHTML = html;
+  }
+
+  /* ---------- sending a stroke ---------- */
+  function send(mask) {
+    if (!mask) return;
+    var r;
+    try { r = eng.stroke(mask); } catch (e) { toast('That stroke hit an error: ' + e.message, true); return; }
+    applyOps(r.ops);
+    var undo = r.steno === '*' && !(r.last && r.last.rtfcre[r.last.rtfcre.length - 1] === '*');
+    var what = undo ? 'undo' : r.last ? (r.last.english === null ? 'no entry' : r.last.rtfcre.join('/') + '  ' + r.last.english) : '';
+    tape.push({ mask: mask, text: what, undo: undo || (r.last && r.last.english === null) }); if (tape.length > 60) tape.shift();
+    renderTape(0); renderPage();
+  }
+
+  /* ---------- the sticks ----------
+     One floating stick for each thumb: it opens wherever the thumb lands on its half, so there is nothing to aim at.
+     A push works the thumb's block of six, laid out as on the board and as on plover_controller, with plover_controller's
+     default paths. A tap sends the next push on that side to the keys that sit around that block on the board instead:
+     the number bar above, the side keys, the vowels underneath. Nothing here is timed: the clock only ends the stroke. */
+  var SIZE = { s: 0.84, m: 1, l: 1.2 };
+  function DEAD() { return 30 * SIZE[opt.size]; } function RV() { return 86 * SIZE[opt.size]; }
+  var HYST = 6;
+  // wedges by screen angle, clockwise from east: c = centre, w = half width. The six of BLOCK are plover_controller's.
+  var BLOCK = { order: ['dr', 'd', 'dl', 'ul', 'u', 'ur'], dr: { c: 30, w: 30 }, d: { c: 90, w: 30 }, dl: { c: 150, w: 30 }, ul: { c: 210, w: 30 }, u: { c: 270, w: 30 }, ur: { c: 330, w: 30 } };
+  var AROUND = { order: ['r', 'dr', 'd', 'dl', 'l', 'ul', 'u', 'ur'], r: { c: 0, w: 30 }, dr: { c: 50, w: 20 }, d: { c: 90, w: 20 }, dl: { c: 130, w: 20 }, l: { c: 180, w: 30 }, ul: { c: 230, w: 20 }, u: { c: 270, w: 20 }, ur: { c: 310, w: 20 } };
+  var KEY = { l: { dr: 'R-', d: 'W-', dl: 'K-', ul: 'T-', u: 'P-', ur: 'H-' }, r: { dr: '-G', d: '-B', dl: '-R', ul: '-F', u: '-P', ur: '-L' } };
+  var KEY2 = {
+    l: { l: ['S-'], ul: ['#'], u: ['#'], ur: ['#'], r: ['*'], dr: ['O-'], d: ['A-', 'O-'], dl: ['A-'] },
+    r: { l: ['-S'], ul: ['-T'], u: ['-T', '-D'], ur: ['-D'], r: ['-Z'], dr: ['-U'], d: ['-E', '-U'], dl: ['-E'] }
+  };
+  // plover_controller's default ordered mappings (GPL-2.0, Tadeo Kondrak and contributors): the path a stick takes -> the keys it means
+  var STICKMAP = (function (raw) {
+    var out = { l: {}, r: {} };
+    ['l', 'r'].forEach(function (side) { Object.keys(raw[side]).forEach(function (path) { var m = 0, right = false; raw[side][path].split('').forEach(function (c) { if (c === '-') right = true; else m |= BIT[right ? '-' + c : c + '-']; }); out[side][path] = m; }); });
+    return out;
+  })({"l":{"d,dl,ul,dl":"TW-","d,dl,ul,u,ul":"KPW-","d,dl,ul,u,ul,dl,d":"PW-","d,dl,ul,u,ul,dl":"TPW-","d,dl,ul,u,ur,dr,ur,u,ul":"KPWHR-","d,dl,ul,u,ur,dr,ur,u,ul,dl,d":"WR-","d,dl,ul,u,ur,dr,ur":"TKPWR-","d,dl,ul,u,ur,u,ul":"KPWH-","d,dl,ul,u,ur,u,ul,dl,d":"WH-","d,dl,ul,u,ur,u,ul,dl":"TWH-","d,dl,ul,u,ur,u":"TKWH-","d,dl,ul,u":"PW-","d,dl,ul":"TW-","d,dr,ur,dr":"WH-","d,dr,ur,u,ul,dl":"KW-","d,dr,ur,u,ul,dl,ul":"KPWHR-","d,dr,ur,u,ul,dl,ul,u,ur,dr,d":"KW-","d,dr,ur,u,ul,dl,ul,u,ur":"TKPWR-","d,dr,ur,u,ul,u,ur,dr,d":"TW-","d,dr,ur,u,ul,u,ur,dr":"TWH-","d,dr,ur,u,ul,u,ur":"TPWR-","d,dr,ur,u,ul,u":"TWHR-","d,dr,ur,u,ul":"TW-","d,dr,ur,u,ur,dr,d":"PW-","d,dr,ur,u,ur,dr":"PWH-","d,dr,ur,u,ur":"PWR-","d,dr,ur,u":"PW-","dl,d,dr,d":"KR-","dl,d,dr,ur,dr":"KWH-","dl,d,dr,ur,dr,d":"KHR-","dl,d,dr,ur,dr,d,dl":"KH-","dl,d,dr,ur,u,ul,u,ur,dr,d,dl":"TK-","dl,d,dr,ur,u,ul,u,ur,dr":"TKPWH-","dl,d,dr,ur,u,ul,u":"TKWHR-","dl,d,dr,ur,u,ul":"TK-","dl,d,dr,ur,u,ur":"KPWR-","dl,d,dr,ur,u,ur,dr":"KPWH-","dl,d,dr,ur,u,ur,dr,d":"KPR-","dl,d,dr,ur,u,ur,dr,d,dl":"KP-","dl,ul,u,ul":"KP-","dl,ul,u,ur,dr,d,dr,ur,u,ul,dl":"KW-","dl,ul,u,ur,dr,d,dr,ur,u":"TKWHR-","dl,ul,u,ur,dr,d,dr":"TKPWH-","dl,ul,u,ur,dr,ur,u,ul":"KPR-","dl,ul,u,ur,dr,ur,u,ul,dl":"KR-","dl,ul,u,ur,dr,ur,u":"TKHR-","dl,ul,u,ur,dr,ur":"TKPR-","dl,ul,u,ur,u,ul":"KPH-","dl,ul,u,ur,u,ul,dl":"KH-","dl,ul,u,ur,u":"TKH-","dr,d,dl":"KR-","dr,d,dl,d":"KR-","dr,d,dl,ul,dl,d,dr":"TR-","dr,d,dl,ul,dl,d":"TKR-","dr,d,dl,ul,dl":"TWR-","dr,d,dl,ul,u,ul":"KPWR-","dr,d,dl,ul,u,ul,dl,d":"KPR-","dr,d,dl,ul,u,ul,dl,d,dr":"PR-","dr,d,dl,ul,u,ul,dl":"TPWR-","dr,d,dl,ul,u,ur":"HR-","dr,d,dl,ul,u,ur,u,ul,dl,d,dr":"HR-","dr,d,dl,ul,u,ur,u,ul,dl":"TPWHR-","dr,d,dl,ul,u,ur,u":"TKWHR-","dr,d,dl,ul,u":"PR-","dr,d,dl,ul":"TR-","dr,ur,u,ul,dl":"KR-","dr,ur,u,ul,dl,d,dl,ul,u,ur,dr":"WR-","dr,ur,u,ul,dl,d,dl,ul,u":"TKWHR-","dr,ur,u,ul,dl,d,dl":"TPWHR-","dr,ur,u,ul,dl,d":"WR-","dr,ur,u,ul,dl,ul":"KPHR-","dr,ur,u,ul,dl,ul,u,ur":"KPR-","dr,ur,u,ul,dl,ul,u,ur,dr":"KR-","dr,ur,u,ul,dl,ul,u":"TKHR-","dr,ur,u,ul,u,ur,dr":"TR-","dr,ur,u,ul,u,ur":"TPR-","dr,ur,u,ul,u":"THR-","dr,ur,u,ul":"TR-","dr,ur,u,ur":"PR-","dr,ur,u":"PR-","u,ul,dl":"KP-","u,ul,dl,d,dl,ul":"KPW-","u,ul,dl,d,dl,ul,u":"PW-","u,ul,dl,d,dl":"TPW-","u,ul,dl,d,dr,d,dl,ul":"KPR-","u,ul,dl,d,dr,d,dl,ul,u":"PR-","u,ul,dl,d,dr,d,dl":"TPWR-","u,ul,dl,d,dr,d":"TKPR-","u,ul,dl,d,dr,ur,dr,d,dl,ul,u":"PH-","u,ul,dl,d,dr,ur,dr,d,dl":"TPWHR-","u,ul,dl,d,dr,ur,dr":"TKPWH-","u,ul,dl,ul":"KP-","u,ur,dr,d,dl":"KP-","u,ur,dr,d,dl,d":"KPHR-","u,ur,dr,d,dl,d,dr":"KPWH-","u,ur,dr,d,dl,d,dr,ur":"KPR-","u,ur,dr,d,dl,d,dr,ur,u":"KP-","u,ur,dr,d,dl,ul,dl,d,dr,ur,u":"TP-","u,ur,dr,d,dl,ul,dl,d,dr":"TKPWH-","u,ur,dr,d,dl,ul,dl":"TPWHR-","u,ur,dr,d,dl,ul":"TP-","u,ur,dr,d,dr,ur,u":"PW-","u,ur,dr,d,dr,ur":"PWR-","u,ur,dr,d,dr":"PWH-","u,ur,dr,ur":"PR-","ul,dl,d,dl":"TW-","ul,dl,d,dr,d,dl,ul":"TR-","ul,dl,d,dr,d,dl":"TWR-","ul,dl,d,dr,d":"TKR-","ul,dl,d,dr,ur,dr,d,dl,ul":"TH-","ul,dl,d,dr,ur,dr,d,dl":"TWH-","ul,dl,d,dr,ur,dr,d":"TKHR-","ul,dl,d,dr,ur,dr":"TKWH-","ul,dl,d,dr,ur,u,ur,dr,d,dl,ul":"TP-","ul,dl,d,dr,ur,u,ur,dr,d":"TKPHR-","ul,dl,d,dr,ur,u,ur":"TKPWR-","ul,u,ur,dr,d,dl,d,dr,ur,u,ul":"TK-","ul,u,ur,dr,d,dl,d,dr,ur":"TKPWR-","ul,u,ur,dr,d,dl,d":"TKPHR-","ul,u,ur,dr,d,dr,ur,u,ul":"TW-","ul,u,ur,dr,d,dr,ur,u":"TWH-","ul,u,ur,dr,d,dr,ur":"TPWR-","ul,u,ur,dr,d,dr":"TPWH-","ul,u,ur,dr,ur,u,ul":"TR-","ul,u,ur,dr,ur,u":"THR-","ul,u,ur,dr,ur":"TPR-","ul,u,ur,u":"TH-","ur,dr,d,dl":"KH-","ur,dr,d,dl,d":"KHR-","ur,dr,d,dl,d,dr":"KWH-","ur,dr,d,dl,d,dr,ur":"KH-","ur,dr,d,dl,ul,dl,d,dr,ur":"TH-","ur,dr,d,dl,ul,dl,d,dr":"TWH-","ur,dr,d,dl,ul,dl,d":"TKHR-","ur,dr,d,dl,ul,dl":"TWHR-","ur,dr,d,dl,ul,u,ul":"KPWHR-","ur,dr,d,dl,ul,u,ul,dl,d,dr,ur":"PH-","ur,dr,d,dl,ul,u,ul,dl,d":"TKPHR-","ur,dr,d,dl,ul,u":"PH-","ur,dr,d,dl,ul":"TH-","ur,dr,d,dr":"WH-","ur,dr,d":"WH-","ur,u,ul,dl":"KH-","ur,u,ul,dl,d,dl,ul":"KPWH-","ur,u,ul,dl,d,dl,ul,u,ur":"WH-","ur,u,ul,dl,d,dl,ul,u":"TWH-","ur,u,ul,dl,d,dl":"TPWH-","ur,u,ul,dl,d,dr,d,dl,ul":"KPWHR-","ur,u,ul,dl,d,dr,d,dl,ul,u,ur":"HR-","ur,u,ul,dl,d,dr,d":"TKPHR-","ur,u,ul,dl,d":"WH-","ur,u,ul,dl,ul":"KPH-","ur,u,ul,dl,ul,u,ur":"KH-","ur,u,ul,dl,ul,u":"TKH-","ur,u,ul,u":"TH-","ur,u,ul":"TH-"},"r":{"dl,d,dr,d":"-RG","dl,d,dr,ur,dr":"-RBL","dl,d,dr,ur,dr,d,dl":"-RL","dl,d,dr,ur,dr,d":"-RLG","dl,d,dr,ur,u,ul":"-FR","dl,d,dr,ur,u,ul,u":"-FRBLG","dl,d,dr,ur,u,ul,u,ur,dr":"-FRPBL","dl,d,dr,ur,u,ul,u,ur,dr,d,dl":"-FR","dl,d,dr,ur,u,ur,dr,d,dl":"-RP","dl,d,dr,ur,u,ur,dr,d":"-RPG","dl,d,dr,ur,u,ur,dr":"-RPBL","dl,d,dr,ur,u,ur":"-RPBG","dl,ul,u,ul":"-RP","dl,ul,u,ur,dr,d,dr":"-FRPBL","dl,ul,u,ur,dr,d,dr,ur,u":"-FRBLG","dl,ul,u,ur,dr,d,dr,ur,u,ul,dl":"-RB","dl,ul,u,ur,dr,ur":"-FRPG","dl,ul,u,ur,dr,ur,u":"-FRLG","dl,ul,u,ur,dr,ur,u,ul,dl":"-RG","dl,ul,u,ur,dr,ur,u,ul":"-RPG","dl,ul,u,ur,u":"-FRL","dl,ul,u,ur,u,ul,dl":"-RL","dl,ul,u,ur,u,ul":"-RPL","d,dl,ul":"-FB","d,dl,ul,dl":"-FB","d,dl,ul,u":"-PB","d,dl,ul,u,ul,dl":"-FPB","d,dl,ul,u,ul,dl,d":"-PB","d,dl,ul,u,ul":"-RPB","d,dl,ul,u,ur,dr,ur":"-FRPBG","d,dl,ul,u,ur,dr,ur,u,ul,dl,d":"-BG","d,dl,ul,u,ur,dr,ur,u,ul":"-RPBLG","d,dl,ul,u,ur,u":"-FRBL","d,dl,ul,u,ur,u,ul,dl":"-FBL","d,dl,ul,u,ur,u,ul,dl,d":"-BL","d,dl,ul,u,ur,u,ul":"-RPBL","d,dr,ur,dr":"-BL","d,dr,ur,u":"-PB","d,dr,ur,u,ul":"-FB","d,dr,ur,u,ul,dl":"-RB","d,dr,ur,u,ul,dl,ul,u,ur":"-FRPBG","d,dr,ur,u,ul,dl,ul,u,ur,dr,d":"-RB","d,dr,ur,u,ul,dl,ul":"-RPBLG","d,dr,ur,u,ul,u":"-FBLG","d,dr,ur,u,ul,u,ur":"-FPBG","d,dr,ur,u,ul,u,ur,dr":"-FBL","d,dr,ur,u,ul,u,ur,dr,d":"-FB","d,dr,ur,u,ur":"-PBG","d,dr,ur,u,ur,dr":"-PBL","d,dr,ur,u,ur,dr,d":"-PB","dr,d,dl":"-RG","dr,d,dl,d":"-RG","dr,d,dl,ul":"-FG","dr,d,dl,ul,dl":"-FBG","dr,d,dl,ul,dl,d":"-FRG","dr,d,dl,ul,dl,d,dr":"-FG","dr,d,dl,ul,u":"-PG","dr,d,dl,ul,u,ul,dl":"-FPBG","dr,d,dl,ul,u,ul,dl,d,dr":"-PG","dr,d,dl,ul,u,ul,dl,d":"-RPG","dr,d,dl,ul,u,ul":"-RPBG","dr,d,dl,ul,u,ur":"-LG","dr,d,dl,ul,u,ur,u":"-FRBLG","dr,d,dl,ul,u,ur,u,ul,dl":"-FPBLG","dr,d,dl,ul,u,ur,u,ul,dl,d,dr":"-LG","dr,ur,u":"-PG","dr,ur,u,ul":"-FG","dr,ur,u,ul,dl":"-RG","dr,ur,u,ul,dl,d":"-BG","dr,ur,u,ul,dl,d,dl":"-FPBLG","dr,ur,u,ul,dl,d,dl,ul,u":"-FRBLG","dr,ur,u,ul,dl,d,dl,ul,u,ur,dr":"-BG","dr,ur,u,ul,dl,ul,u":"-FRLG","dr,ur,u,ul,dl,ul,u,ur,dr":"-RG","dr,ur,u,ul,dl,ul,u,ur":"-RPG","dr,ur,u,ul,dl,ul":"-RPLG","dr,ur,u,ul,u":"-FLG","dr,ur,u,ul,u,ur":"-FPG","dr,ur,u,ul,u,ur,dr":"-FG","dr,ur,u,ur":"-PG","ul,dl,d,dl":"-FB","ul,dl,d,dr,d":"-FRG","ul,dl,d,dr,d,dl":"-FBG","ul,dl,d,dr,d,dl,ul":"-FG","ul,dl,d,dr,ur,dr":"-FRBL","ul,dl,d,dr,ur,dr,d":"-FRLG","ul,dl,d,dr,ur,dr,d,dl":"-FBL","ul,dl,d,dr,ur,dr,d,dl,ul":"-FL","ul,dl,d,dr,ur,u,ur":"-FRPBG","ul,dl,d,dr,ur,u,ur,dr,d":"-FRPLG","ul,dl,d,dr,ur,u,ur,dr,d,dl,ul":"-FP","ul,u,ur,dr,d,dl,d":"-FRPLG","ul,u,ur,dr,d,dl,d,dr,ur":"-FRPBG","ul,u,ur,dr,d,dl,d,dr,ur,u,ul":"-FR","ul,u,ur,dr,d,dr":"-FPBL","ul,u,ur,dr,d,dr,ur":"-FPBG","ul,u,ur,dr,d,dr,ur,u":"-FBL","ul,u,ur,dr,d,dr,ur,u,ul":"-FB","ul,u,ur,dr,ur":"-FPG","ul,u,ur,dr,ur,u":"-FLG","ul,u,ur,dr,ur,u,ul":"-FG","ul,u,ur,u":"-FL","u,ul,dl,d,dl":"-FPB","u,ul,dl,d,dl,ul,u":"-PB","u,ul,dl,d,dl,ul":"-RPB","u,ul,dl,d,dr,d":"-FRPG","u,ul,dl,d,dr,d,dl":"-FPBG","u,ul,dl,d,dr,d,dl,ul,u":"-PG","u,ul,dl,d,dr,d,dl,ul":"-RPG","u,ul,dl,d,dr,ur,dr":"-FRPBL","u,ul,dl,d,dr,ur,dr,d,dl":"-FPBLG","u,ul,dl,d,dr,ur,dr,d,dl,ul,u":"-PL","u,ul,dl,ul":"-RP","u,ul,dl":"-RP","u,ur,dr,d,dl,d,dr,ur,u":"-RP","u,ur,dr,d,dl,d,dr,ur":"-RPG","u,ur,dr,d,dl,d,dr":"-RPBL","u,ur,dr,d,dl,d":"-RPLG","u,ur,dr,d,dl,ul":"-FP","u,ur,dr,d,dl,ul,dl":"-FPBLG","u,ur,dr,d,dl,ul,dl,d,dr":"-FRPBL","u,ur,dr,d,dl,ul,dl,d,dr,ur,u":"-FP","u,ur,dr,d,dl":"-RP","u,ur,dr,d,dr":"-PBL","u,ur,dr,d,dr,ur":"-PBG","u,ur,dr,d,dr,ur,u":"-PB","u,ur,dr,ur":"-PG","ur,dr,d":"-BL","ur,dr,d,dl,d,dr":"-RBL","ur,dr,d,dl,d,dr,ur":"-RL","ur,dr,d,dl,d":"-RLG","ur,dr,d,dl,ul":"-FL","ur,dr,d,dl,ul,dl":"-FBLG","ur,dr,d,dl,ul,dl,d":"-FRLG","ur,dr,d,dl,ul,dl,d,dr":"-FBL","ur,dr,d,dl,ul,dl,d,dr,ur":"-FL","ur,dr,d,dl,ul,u":"-PL","ur,dr,d,dl,ul,u,ul,dl,d":"-FRPLG","ur,dr,d,dl,ul,u,ul,dl,d,dr,ur":"-PL","ur,dr,d,dl,ul,u,ul":"-RPBLG","ur,dr,d,dl":"-RL","ur,dr,d,dr":"-BL","ur,u,ul":"-FL","ur,u,ul,dl,d":"-BL","ur,u,ul,dl,d,dl":"-FPBL","ur,u,ul,dl,d,dl,ul,u":"-FBL","ur,u,ul,dl,d,dl,ul,u,ur":"-BL","ur,u,ul,dl,d,dl,ul":"-RPBL","ur,u,ul,dl,d,dr,d":"-FRPLG","ur,u,ul,dl,d,dr,d,dl,ul,u,ur":"-LG","ur,u,ul,dl,d,dr,d,dl,ul":"-RPBLG","ur,u,ul,dl,ul,u":"-FRL","ur,u,ul,dl,ul,u,ur":"-RL","ur,u,ul,dl,ul":"-RPL","ur,u,ul,dl":"-RL","ur,u,ul,u":"-FL"}});
+  function maskOf(keys) { var m = 0; keys.forEach(function (k) { m |= BIT[k]; }); return m; }
+  function resolve(t, path) {
+    if (!path.length) return 0;
+    if (t.set === 2) { var m = 0; path.forEach(function (d) { m |= maskOf(KEY2[t.side][d]); }); return m; }
+    var hit = STICKMAP[t.side][path.join(',')]; return hit != null ? hit : maskOf(path.map(function (s) { return KEY[t.side][s]; }));
+  }
+  function drawRing(el, side) {
+    var r0 = DEAD(), r1 = RV(), rad = (r0 + r1) / 2 + 4, g = '<svg viewBox="-150 -150 300 300"><g class="g1"><circle class="inner" r="' + r1 + '"/>';
+    function spoke(deg) { var a = deg * Math.PI / 180; return '<line class="spoke" x1="' + r0 * Math.cos(a) + '" y1="' + r0 * Math.sin(a) + '" x2="' + r1 * Math.cos(a) + '" y2="' + r1 * Math.sin(a) + '"/>'; }
+    function label(k, deg, y0) { var a = deg * Math.PI / 180, x = rad * Math.cos(a), y = rad * Math.sin(a); return '<circle class="lit" data-k="' + k + '" cx="' + x + '" cy="' + y + '" r="18"/><text data-k="' + k + '" x="' + x + '" y="' + (y + (k === '*' ? 5 : 0)) + '">' + k.replace('-', '') + '</text>'; }
+    BLOCK.order.forEach(function (id) { g += spoke(BLOCK[id].c - 30) + label(KEY[side][id], BLOCK[id].c); });
+    g += '<circle class="dead" r="' + r0 + '"/><text class="hub" data-k="' + (side === 'l' ? 'S-' : '*') + '" x="0" y="' + (side === 'l' ? 0 : 5) + '">' + (side === 'l' ? 'S' : '*') + '</text></g>';
+    g += '<g class="g2"><circle class="inner two" r="' + r1 + '"/>';
+    [30, 70, 110, 150, 210, 330].forEach(function (d) { g += spoke(d); });
+    if (side === 'l') g += label('#', 270) + label('S-', 180) + label('*', 0) + label('A-', 130) + label('O-', 50);
+    else g += spoke(250) + spoke(290) + label('-T', 230) + label('-D', 310) + label('-S', 180) + label('-Z', 0) + label('-E', 130) + label('-U', 50);
+    el.innerHTML = g + '<circle class="dead" r="' + r0 + '"/></g></svg>';
+  }
+  function drawMaps(side) {
+    var K = KEY[side];
+    function cell(k) { return k ? '<span data-k="' + k + '">' + k.replace('-', '') + '</span>' : '<span></span>'; }
+    var block = [K.ul, K.u, K.ur, K.dl, K.d, K.dr].map(cell).join('');
+    var around = (side === 'l' ? [null, '#', null, 'S-', null, '*', 'A-', null, 'O-'] : ['-T', null, '-D', '-S', null, '-Z', '-E', null, '-U']).map(cell).join('');
+    $(side === 'l' ? 'mapsL' : 'mapsR').innerHTML = '<div class="mapwrap one"><div class="map">' + block + '</div><small>' + 'push' + '</small></div><div class="mapwrap two"><div class="map' + (side === 'l' ? '' : ' wide') + '">' + around + '</div><small>' + 'tap, then push' + '</small></div>';
+  }
+  function placeGhosts() { drawRing($('ringL'), 'l'); drawRing($('ringR'), 'r'); drawMaps('l'); drawMaps('r'); refresh(); }
+  var deck = $('deck'), foot = $('foot'), touches = {}, chord = 0, hist = [], sendTimer = 0, armed = { l: false, r: false };      // armed: that side was tapped, so its next push goes around the block
+  function pending() { var m = 0; for (var id in touches) m |= resolve(touches[id], touches[id].path); return m; }
+  function refresh() {
+    var m = chord | pending(); deck.querySelectorAll('[data-k]').forEach(function (n) { n.classList.toggle('on', !!(m & BIT[n.dataset.k])); });
+    $('mapsL').classList.toggle('second', armed.l); $('mapsR').classList.toggle('second', armed.r);
+    $('arpBack').disabled = !hist.length; $('arpClear').disabled = !chord; $('arpSend').disabled = !chord;
+    renderTape(m);
+  }
+  function press(mask) {
+    if (opt.arp && mask) hist.push(chord);
+    if (opt.arp && mask && !(mask & ~chord)) { chord &= ~mask; buzz(6); return; }      // arpeggiating: pushing a key that is already down takes it out
+    if (mask & ~chord) buzz(6); chord |= mask;
+  }
+  function sendNow() { var m = chord; chord = 0; hist = []; refresh(); if (m) { buzz(14); send(m); } }      // the longer tick: that stroke has gone, the next can start
+  function resetChord() { clearTimeout(sendTimer); chord = 0; hist = []; armed.l = armed.r = false; }
+  function closePath(t) { if (!t.path.length) return; press(resolve(t, t.path)); armed[t.side] = false; t.path = []; t.cur = null; t.locked = false; t.did = true; }
+  function off(a, c) { return Math.abs(((a - c + 540) % 360) - 180); }
+  function wedge(tab, cur, a) {
+    if (cur != null && off(a, tab[cur].c) <= tab[cur].w + HYST) return cur;
+    for (var i = 0; i < tab.order.length; i++) if (off(a, tab[tab.order[i]].c) <= tab[tab.order[i]].w) return tab.order[i];
+    return cur != null ? cur : tab.order[0];
+  }
+  function angle(dx, dy) { return (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; }
+  function track(t, x, y) {
+    var dx = x - t.cx, dy = y - t.cy, r = Math.hypot(dx, dy), dead = DEAD();
+    t.lx = x; t.ly = y;
+    if (r > t.maxR) { t.maxR = r; t.mx = dx; t.my = dy; }
+    if (r < dead * 0.5) { if (t.path.length) { closePath(t); refresh(); } return; }      // back at the centre: that trip is done, the next one starts fresh
+    if (r < dead) return;
+    var s = wedge(t.set === 2 ? AROUND : BLOCK, t.cur, angle(dx, dy));
+    if (s !== t.cur) {
+      if (t.path.length === 1 && !t.locked) t.path[0] = s;                                  // still settling on a direction, not a roll
+      else if (t.path[t.path.length - 1] !== s) t.path.push(s);
+      t.cur = s; buzz(4); refresh();
+    }
+    if (r >= dead * 1.5) t.locked = true;
+  }
+  foot.addEventListener('pointerdown', function (e) {
+    if (!ready) return;
+    var act = e.target.closest && e.target.closest('[data-arp]');
+    if (act) {                                                   // arpeggiate: Send is the space bar, Back undoes the last push, Clear empties the stroke (Back brings it back)
+      e.preventDefault(); if (act.disabled) return;
+      if (act.dataset.arp === 'send') { sendNow(); return; }
+      if (act.dataset.arp === 'back') chord = hist.pop() || 0; else { hist.push(chord); chord = 0; }
+      buzz(8); refresh(); return;
+    }
+    e.preventDefault(); try { foot.setPointerCapture(e.pointerId); } catch (err) {}
+    var d = deck.getBoundingClientRect(), x = e.clientX - d.left, y = e.clientY - d.top, side = x < d.width / 2 ? 'l' : 'r';
+    for (var o in touches) if (touches[o].side === side) return;      // one thumb per side
+    clearTimeout(sendTimer);
+    var t = { side: side, set: armed[side] ? 2 : 1, cx: x, cy: y, lx: x, ly: y, t0: performance.now(), maxR: 0, mx: 0, my: 0, path: [], cur: null, locked: false, did: false };
+    touches[e.pointerId] = t;
+    t.mark = $(side === 'l' ? 'ringL' : 'ringR'); t.mark.classList.toggle('hold', t.set === 2); t.mark.style.transform = 'translate(' + x + 'px,' + y + 'px)'; t.mark.classList.add('show');
+    $(side === 'l' ? 'mapsL' : 'mapsR').classList.add('hide');
+    refresh();
+  });
+  foot.addEventListener('pointermove', function (e) { var t = touches[e.pointerId]; if (!t) return; var d = deck.getBoundingClientRect(); track(t, e.clientX - d.left, e.clientY - d.top); });
+  function lift(e) {
+    var t = touches[e.pointerId]; if (!t) return;
+    if (t.path.length) closePath(t);
+    else if (!t.did && e.type === 'pointerup') {
+      if (t.maxR >= DEAD() * 0.6) { t.path = [wedge(t.set === 2 ? AROUND : BLOCK, null, angle(t.mx, t.my))]; closePath(t); }      // a short flick still counts
+      else {                                                                                                                     // anything short of a push is a tap: this side's next push goes around the block
+        armed[t.side] = !armed[t.side];
+        if (armed[t.side]) buzz([7, 45, 7]); else if (opt.tap) press(BIT[t.side === 'l' ? 'S-' : '*']);                           // two ticks say it landed; a second tap is the stick's click
+      }
+    }
+    delete touches[e.pointerId];
+    t.mark.classList.remove('show'); $(t.side === 'l' ? 'mapsL' : 'mapsR').classList.remove('hide');
+    refresh();
+    if (!Object.keys(touches).length && !opt.arp) { clearTimeout(sendTimer); sendTimer = setTimeout(sendNow, opt.wait); }
+  }
+  foot.addEventListener('pointerup', lift); foot.addEventListener('pointercancel', lift);
+  ['touchstart', 'touchmove', 'contextmenu', 'gesturestart', 'selectstart'].forEach(function (n) { foot.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false }); });
+
+  /* computer keyboard: the usual Plover QWERTY steno layout, for trying things at a desk */
+  var QW = { q: '#', a: 'S-', w: 'T-', s: 'K-', e: 'P-', d: 'W-', r: 'H-', f: 'R-', c: 'A-', v: 'O-', t: '*', g: '*', y: '*', h: '*', n: '-E', m: '-U', u: '-F', j: '-R', i: '-P', k: '-B', o: '-L', l: '-G', p: '-T', ';': '-S', '[': '-D', "'": '-Z' }, down = {}, kchord = 0;
+  window.addEventListener('keydown', function (e) { if (!ready || e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || document.querySelector('.scrim.show')) return; var k = QW[e.key.toLowerCase()]; if (!k) return; e.preventDefault(); down[e.key.toLowerCase()] = 1; kchord |= BIT[k]; renderTape(kchord); });
+  window.addEventListener('keyup', function (e) { var kk = e.key.toLowerCase(); if (!down[kk]) return; delete down[kk]; if (!Object.keys(down).length) { var m = kchord; kchord = 0; send(m); } });
+
+  /* ---------- zip reader (for the Lapwing and Plover downloads) ---------- */
+  function inflateRaw(bytes) {
+    if (typeof DecompressionStream !== 'undefined') return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    var ready = window.pako ? Promise.resolve() : new Promise(function (res, rej) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako_inflate.min.js'; s.onload = res; s.onerror = function () { rej(new Error('this browser cannot unpack zip files. Unzip it first and add the files inside.')); }; document.head.appendChild(s); });
+    return ready.then(function () { return window.pako.inflateRaw(bytes).buffer; });
+  }
+  function unzip(buf) {
+    var dv = new DataView(buf), n = buf.byteLength, eo = -1, files = [];
+    for (var i = n - 22; i >= Math.max(0, n - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eo = i; break; }
+    if (eo < 0) return Promise.reject(new Error('That file is not a zip archive.'));
+    var count = dv.getUint16(eo + 10, true), off = dv.getUint32(eo + 16, true), dec = new TextDecoder();
+    for (var c = 0; c < count; c++) {
+      var nl = dv.getUint16(off + 28, true), xl = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true);
+      files.push({ name: dec.decode(new Uint8Array(buf, off + 46, nl)), method: dv.getUint16(off + 10, true), csize: dv.getUint32(off + 20, true), lho: dv.getUint32(off + 42, true) });
+      off += 46 + nl + xl + cl;
+    }
+    return Promise.resolve({ files: files, read: function (f, encoding) {
+      var start = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true), bytes = new Uint8Array(buf, start, f.csize);
+      var p = f.method === 0 ? Promise.resolve(bytes.buffer.slice(start, start + f.csize)) : inflateRaw(bytes);
+      return p.then(function (ab) { return new TextDecoder(encoding || 'utf-8').decode(ab); });
+    } });
+  }
+
+  /* ---------- library ---------- */
+  function stack() { return lib.stacks[lib.system]; }
+  function kindOf(name) { var m = /\.([a-z]+)$/i.exec(name); var x = m ? m[1].toLowerCase() : ''; return x === 'json' || x === 'modal' || x === 'py' || x === 'rtf' ? x : null; }
+  function newId() { return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function addEntry(system, name, src, enabled, atTop) {
+    var st = lib.stacks[system], old = st.filter(function (d) { return d.name === name; })[0];
+    if (old) { dbSet('src:' + old.id, src); delete built[old.id]; return old; }
+    var entry = { id: newId(), name: name, kind: kindOf(name), enabled: enabled !== false };
+    if (atTop) st.unshift(entry); else st.push(entry);
+    dbSet('src:' + entry.id, src);
+    return entry;
+  }
+  function orderBy(system, order) {
+    var st = lib.stacks[system];
+    st.sort(function (a, b) { var x = order.indexOf(a.name), y = order.indexOf(b.name); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
+  }
+  function importFiles(fileList) {
+    var files = Array.from(fileList), added = [], chain = Promise.resolve();
+    status('Reading ' + files.length + (files.length === 1 ? ' file' : ' files') + '. Large dictionaries take a few seconds.');
+    files.forEach(function (f) {
+      chain = chain.then(function () {
+        if (/\.(zip|whl)$/i.test(f.name)) return f.arrayBuffer().then(unzip).then(function (z) { return importZip(z, added); });
+        if (/\.txt$/i.test(f.name)) return f.text().then(function (t) { dbSet('wl:' + lib.system, t); eng.setWordList(t); added.push('spelling word list'); });
+        if (!kindOf(f.name)) { added.push(f.name + ' (skipped: not a dictionary)'); return; }
+        return (/\.rtf$/i.test(f.name) ? f.arrayBuffer().then(function (ab) { return new TextDecoder('windows-1252').decode(ab); }) : f.text()).then(function (t) { addEntry(lib.system, f.name, t, true, true); added.push(f.name); });
+      });
+    });
+    return chain.then(function () { saveMeta(); return rebuild(); }).then(function () { drawLibrary(); status(added.length ? 'Added ' + added.length + ': ' + added.join(', ') : 'Nothing in there looked like a dictionary.', !added.length); })
+      .catch(function (e) { drawLibrary(); status('Could not read that: ' + (e && e.message || e), true); });
+  }
+  function importZip(z, added) {
+    var lap = z.files.filter(function (f) { return /plover_lapwing\/dictionaries\/[^\/]+$/.test(f.name); }), plv = z.files.filter(function (f) { return /(^|\/)plover\/assets\/[^\/]+$/.test(f.name); });
+    var system = lap.length ? 'Lapwing' : plv.length ? 'English Stenotype' : lib.system, list = lap.length ? lap : plv.length ? plv : z.files, order = lap.length ? LAPWING_ORDER : PLOVER_ORDER, chain = Promise.resolve();
+    list.forEach(function (f) {
+      var base = f.name.split('/').pop();
+      if (base === 'american_english_words.txt') chain = chain.then(function () { return z.read(f); }).then(function (t) { dbSet('wl:' + system, t); if (system === lib.system) eng.setWordList(t); added.push('spelling word list'); });
+      else if (kindOf(base)) chain = chain.then(function () { return z.read(f, /\.rtf$/i.test(base) ? 'windows-1252' : 'utf-8'); }).then(function (t) { addEntry(system, base, t, !(lap.length || plv.length) || order.indexOf(base) >= 0); added.push(base); });
+    });
+    return chain.then(function () {
+      if (lap.length || plv.length) {
+        if (!lib.stacks[system].some(function (d) { return d.name === 'user.json'; })) addEntry(system, 'user.json', '{}', true, true);
+        orderBy(system, order); lib.system = system;
+      }
+    });
+  }
+  // Python dictionaries run as real Python
+  var py = null, pyFail = null, pyWait = null;
+  function ensurePy() {
+    if (py) return Promise.resolve(py); if (pyFail) return Promise.reject(pyFail); if (pyWait) return pyWait;
+    toast('Starting Python for your own .py dictionaries…', false, true);
+    var timer, slow = new Promise(function (_, rej) { timer = setTimeout(function () { rej(new Error('no answer after a minute')); }, 60000); });
+    var boot = new Promise(function (res, rej) { var s = document.createElement('script'); s.src = PY_URL + 'pyodide.js'; s.onload = res; s.onerror = function () { rej(new Error('the Python runtime could not be downloaded')); }; document.head.appendChild(s); })
+      .then(function () { return window.loadPyodide({ indexURL: PY_URL }); })
+      .then(function (p) {
+        p.runPython('import json\ndef _mk(name, src):\n    ns = {"__name__": name}\n    exec(compile(src, name, "exec"), ns)\n    return ns\ndef _lk(ns, key):\n    try:\n        return ns["lookup"](tuple(json.loads(key)))\n    except Exception:\n        return None\ndef _lg(ns):\n    return int(ns.get("LONGEST_KEY", 1))\n');
+        return p;
+      });
+    pyWait = Promise.race([slow, boot]).then(function (p) { clearTimeout(timer); py = p; return p; }, function (e) {
+      clearTimeout(timer); pyWait = null;
+      pyFail = new Error('Python could not start here (' + String(e && e.message || e).split('\n')[0].slice(0, 140) + ').'); throw pyFail;
+    });
+    return pyWait;
+  }
+  function buildOne(entry, src) {
+    try {
+      if (entry.kind === 'json') return new StenoEngine.JsonDict(entry.name, JSON.parse(src || '{}'), eng.system);
+      if (entry.kind === 'rtf') return new StenoEngine.JsonDict(entry.name, RtfCre.parse(src), eng.system);
+      if (entry.kind === 'modal') return new StenoEngine.ModalDict(entry.name, JSON.parse(src), eng.system);
+    } catch (e) { return { error: 'Could not read this file: ' + e.message }; }
+    return null;
+  }
+  function rebuild() {
+    var st = stack(), jobs = [], needPy = [];
+    eng.setSystem(lib.system); eng.start_capitalized = !!opt.cap; eng.start_attached = true;
+    st.forEach(function (entry) {
+      if (built[entry.id] && built[entry.id].sys === lib.system && !built[entry.id].pending) return;
+      jobs.push(dbGet('src:' + entry.id).then(function (src) {
+        if (entry.kind === 'py') {
+          var port = PyPorts.match(entry.name, src);          // the stock Lapwing files run as built-in ports: no Python needed
+          if (port) { var pd = new StenoEngine.FuncDict(entry.name, port.longest, port.fn); pd.sys = lib.system; pd.port = true; built[entry.id] = pd; return; }
+          needPy.push([entry, src]); built[entry.id] = { pending: true, note: entry.enabled ? 'Starting Python…' : 'Needs Python. It starts when you switch this on.', sys: lib.system }; return;
+        }
+        var d = buildOne(entry, src); d.sys = lib.system; built[entry.id] = d;
+      }));
+    });
+    jobs.push(dbGet('wl:' + lib.system).then(function (t) { if (t) eng.setWordList(t); else eng.system.words = null; }));
+    return Promise.all(jobs).then(function () {
+      wire();
+      if (needPy.some(function (p) { return p[0].enabled; })) {
+        ensurePy().then(function (p) {
+          needPy.forEach(function (pair) {
+            try { var ns = p.globals.get('_mk')(pair[0].name, pair[1]), lk = p.globals.get('_lk'); var d = new StenoEngine.FuncDict(pair[0].name, p.globals.get('_lg')(ns), function (key) { return lk(ns, JSON.stringify(key)); }); d.sys = lib.system; built[pair[0].id] = d; }
+            catch (e) { built[pair[0].id] = { error: 'Python could not load this file: ' + String(e.message || e).split('\n').slice(-2)[0], sys: lib.system }; }
+          });
+          wire(); toast('Your Python dictionaries are ready'); drawLibrary();
+        }).catch(function (e) { needPy.forEach(function (pair) { built[pair[0].id] = { error: e.message + ' This dictionary is off.', pyfail: true, sys: lib.system }; }); wire(); toast(e.message, true); drawLibrary(); });
+      }
+    });
+  }
+  function wire() {
+    eng.dictionary.dicts = stack().map(function (entry) { var d = built[entry.id]; if (!d || d.error || d.pending) return null; d.enabled = entry.enabled; return d; }).filter(Boolean);
+    var n = 0; eng.dictionary.dicts.forEach(function (d) { if (d.enabled) n += d.size || 0; });
+    $('sysName').textContent = lib.system === 'Lapwing' ? 'Lapwing' : 'Plover'; $('sysCount').textContent = stack().length ? (n >= 10000 ? Math.round(n / 1000) + 'k' : n.toLocaleString()) + ' entries' : 'set up';
+    renderPage();
+  }
+  function drawLibrary() {
+    document.querySelectorAll('#sysSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.sys === lib.system ? 'true' : 'false'); });
+    var st = stack();
+    $('dictList').innerHTML = st.map(function (e, i) {
+      var d = built[e.id], meta = !d ? 'loading' : d.error ? d.error : d.pending ? d.note : e.kind === 'py' ? (d.port ? 'Python dictionary, built in' : 'Python dictionary, running in Python') : (d.size || 0).toLocaleString() + ' entries' + (e.kind === 'modal' ? ', modal' : e.kind === 'rtf' ? ', from RTF' : '');
+      return '<div class="dict' + (e.enabled ? '' : ' off') + '"><span class="ord"><button data-up="' + i + '" aria-label="Move up">↑</button><button data-down="' + i + '" aria-label="Move down">↓</button></span><span class="nm">' + esc(e.name) + '</span><input type="checkbox" class="tog" data-en="' + i + '"' + (e.enabled ? ' checked' : '') + ' aria-label="Use ' + esc(e.name) + '"><span class="meta' + (d && d.error ? ' bad' : '') + '">' + esc(meta) + (d && d.pyfail ? ' <button data-retry="1" style="font-weight:600;text-decoration:underline;margin-left:6px">try again</button>' : '') + ' <button data-rm="' + i + '" style="color:var(--rule);font-weight:600;margin-left:8px">remove</button></span></div>';
+    }).join('');
+    var lap = lib.system === 'Lapwing';
+    $('libEmpty').innerHTML = st.length ? '' : '<h3>Get the ' + (lap ? 'Lapwing' : 'Plover') + ' dictionaries</h3><ol class="steps"><li>Download <a href="' + (lap ? 'https://github.com/aerickt/plover-lapwing-aio/archive/refs/heads/main.zip' : 'https://github.com/openstenoproject/plover/archive/refs/heads/main.zip') + '" target="_blank" rel="noopener">' + (lap ? 'the Lapwing AIO zip from GitHub' : 'the Plover zip from GitHub') + '</a>. ' + (lap ? 'It is the same package the Lapwing AIO plugin installs.' : 'It holds main.json, commands.json and the spelling word list.') + '</li><li>Come back and tap Add files, then pick that zip.</li><li>The dictionaries, their order and the spelling word list are set up for you.</li></ol><p class="lead" style="margin-top:10px">You can also add your own .json, .rtf, .py and .modal files one at a time.</p>';
+    $('libNote').textContent = eng.system.words ? 'Spelling word list loaded for this system.' : (st.length ? 'No spelling word list for this system: suffixes fall back to the plain rules. Add american_english_words.txt to match Plover exactly.' : '');
+  }
+  function openLibrary() { drawLibrary(); $('libStatus').textContent = ''; show('library', true); }
+  $('dictList').addEventListener('click', function (e) {
+    var b = e.target.closest('button'), st = stack(); if (!b) return;
+    if (b.dataset.retry !== undefined) { pyFail = null; Object.keys(built).forEach(function (id) { if (built[id].pyfail) delete built[id]; }); rebuild().then(drawLibrary); return; }
+    if (b.dataset.up !== undefined || b.dataset.down !== undefined) { var i = +(b.dataset.up !== undefined ? b.dataset.up : b.dataset.down), j = b.dataset.up !== undefined ? i - 1 : i + 1; if (j < 0 || j >= st.length) return; var t = st[i]; st[i] = st[j]; st[j] = t; }
+    else if (b.dataset.rm !== undefined) { var gone = st.splice(+b.dataset.rm, 1)[0]; dbSet('src:' + gone.id, undefined); delete built[gone.id]; }
+    saveMeta(); wire(); drawLibrary();
+  });
+  $('dictList').addEventListener('change', function (e) { var c = e.target; if (c.dataset.en === undefined) return; stack()[+c.dataset.en].enabled = c.checked; saveMeta(); rebuild().then(drawLibrary); });
+  $('sysSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || b.dataset.sys === lib.system) return; lib.system = b.dataset.sys; saveMeta(); rebuild().then(drawLibrary); });
+  $('fileIn').addEventListener('change', function (e) { var fl = Array.from(e.target.files || []); e.target.value = ''; if (fl.length) importFiles(fl); else status('No file was chosen.', true); });
+  // on a computer, files can also be dropped anywhere on the page
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); var fl = Array.from(e.dataTransfer && e.dataTransfer.files || []); if (fl.length) { openLibrary(); importFiles(fl); } });
+  function userDict() {
+    var e = stack().filter(function (d) { return d.name === 'user.json'; })[0];
+    if (!e) { e = addEntry(lib.system, 'user.json', '{}', true, true); built[e.id] = new StenoEngine.JsonDict('user.json', {}, eng.system); built[e.id].sys = lib.system; }
+    return e;
+  }
+  function saveUser(e) { var o = {}; built[e.id].map.forEach(function (v, k) { o[k] = v; }); built[e.id].size = built[e.id].map.size; dbSet('src:' + e.id, JSON.stringify(o)); saveMeta(); wire(); drawLibrary(); return o; }
+  $('btnAddTr').addEventListener('click', function () { $('addTr').hidden = !$('addTr').hidden; });
+  $('trSave').addEventListener('click', function () {
+    var o = $('trOutline').value.trim().toUpperCase(), t = $('trText').value;
+    if (!o || !t) { toast('Give both an outline and a translation.', true); return; }
+    var e = userDict(), d = built[e.id], k = eng.system.normalize(o), n = k.split('/').length;
+    d.map.set(k, t); if (n > d.longest_key) d.longest_key = n; saveUser(e);
+    $('trOutline').value = ''; $('trText').value = ''; toast('Saved ' + k + ' to user.json');
+  });
+  $('btnExport').addEventListener('click', function () { var e = userDict(); copy(JSON.stringify(saveUser(e), null, 0)); });
+  // plover-dict-commands: +name enables, -name disables, !name toggles; priority moves to the top
+  function dictCommand(name, arg) {
+    var st = stack(), sels = arg.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (name === 'end_solo_dict') { if (lib.solo) { lib.solo.forEach(function (en, i) { if (st[i]) st[i].enabled = en; }); lib.solo = null; } }
+    else {
+      if (name === 'solo_dict' && !lib.solo) { lib.solo = st.map(function (d) { return d.enabled; }); st.forEach(function (d) { d.enabled = false; }); }
+      sels.forEach(function (s) {
+        var op = '+-!'.indexOf(s[0]) >= 0 ? s[0] : '+', nm = '+-!'.indexOf(s[0]) >= 0 ? s.slice(1) : s, i = -1;
+        st.forEach(function (d, k) { if (i < 0 && (d.name === nm || d.name.endsWith(nm))) i = k; });
+        if (i < 0) return;
+        if (name === 'priority_dict') st.unshift(st.splice(i, 1)[0]); else st[i].enabled = op === '+' ? true : op === '-' ? false : !st[i].enabled;
+      });
+    }
+    saveMeta(); rebuild(); toast('Dictionaries changed by a stroke');
+  }
+
+  /* ---------- lookup ---------- */
+  function openLookup() { show('lookupP', true); $('lkOut').innerHTML = ''; }
+  $('lkIn').addEventListener('input', function () {
+    var q = $('lkIn').value.trim(), hits = [];
+    if (q.length < 1) { $('lkOut').innerHTML = ''; return; }
+    eng.dictionary.dicts.forEach(function (d) {
+      if (!d.enabled) return;
+      var maps = d.map ? [d.map] : d.sub ? [d.sub.entry, d.sub.dict, d.sub.exit].filter(Boolean) : [];
+      maps.forEach(function (m) { m.forEach(function (v, k) { if (v === q || v.toLowerCase() === q.toLowerCase()) hits.push([k, d.name, v]); }); });
+    });
+    hits.sort(function (a, b) { return a[0].split('/').length - b[0].split('/').length || a[0].length - b[0].length; });
+    $('lkOut').innerHTML = hits.length ? hits.slice(0, 24).map(function (h) { return esc(h[0]) + ' <small>' + esc(h[1]) + (h[2] !== q ? ' (' + esc(h[2]) + ')' : '') + '</small>'; }).join('<br>') + (hits.length > 24 ? '<br><small>and ' + (hits.length - 24) + ' more</small>' : '') : '<small>No outline gives exactly that. Python dictionaries are not searched.</small>';
+  });
+
+  /* ---------- panels and settings ---------- */
+  function show(id, on) { $(id).classList.toggle('show', on); }
+  $('btnSys').addEventListener('click', openLibrary); $('btnLookup').addEventListener('click', openLookup);
+  $('btnGuide').addEventListener('click', function () { show('guide', true); }); $('btnSettings').addEventListener('click', function () { show('settings', true); });
+  $('btnCopy').addEventListener('click', function () { if (ed.text) copy(ed.text); else toast('Nothing to copy yet'); });
+  document.querySelectorAll('.scrim').forEach(function (s) { s.addEventListener('click', function (e) { if (e.target === s || e.target.closest('[data-close]')) s.classList.remove('show'); }); });
+  function applyOpts() {
+    $('optArp').checked = opt.arp; $('deck').classList.toggle('arp', !!opt.arp); if (typeof resetChord === 'function') resetChord();
+    $('optHints').checked = opt.hints; $('optTap').checked = opt.tap; $('optBuzz').checked = opt.buzz; $('optCap').checked = opt.cap;
+    document.querySelectorAll('#sizeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.size === opt.size ? 'true' : 'false'); });
+    document.querySelectorAll('#tallSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.t === opt.height ? 'true' : 'false'); });
+    $('app').style.setProperty('--deckh', opt.height === 's' ? '128px' : opt.height === 'm' ? '176px' : '46vh');
+    document.querySelectorAll('#graceSeg button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.g === opt.wait ? 'true' : 'false'); });
+    $('app').classList.toggle('nohints', !opt.hints); eng.start_capitalized = !!opt.cap; placeGhosts();
+  }
+  [['optHints', 'hints'], ['optTap', 'tap'], ['optBuzz', 'buzz'], ['optCap', 'cap'], ['optArp', 'arp']].forEach(function (p) { $(p[0]).addEventListener('change', function (e) { opt[p[1]] = e.target.checked; saveMeta(); applyOpts(); }); });
+  $('sizeSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opt.size = b.dataset.size; saveMeta(); applyOpts(); });
+  $('tallSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opt.height = b.dataset.t; saveMeta(); applyOpts(); renderTape(0); });
+  $('graceSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opt.wait = +b.dataset.g; saveMeta(); applyOpts(); });
+  $('btnClear').addEventListener('click', function () { ed = { text: '', cur: 0, anchor: null }; eng.clear(); tape = []; show('settings', false); renderTape(0); renderPage(); });
+  window.addEventListener('resize', placeGhosts);
+
+  /* ---------- start ---------- */
+  function start() {
+    dbGet('meta').then(function (m) {
+      if (m && m.lib && m.lib.stacks) { lib = m.lib; lib.solo = null; ['Lapwing', 'English Stenotype'].forEach(function (s) { if (!lib.stacks[s]) lib.stacks[s] = []; }); }
+      if (m && m.opt) for (var k in m.opt) opt[k] = m.opt[k];
+      applyOpts();
+      return rebuild();
+    }).catch(function () { applyOpts(); wire(); }).then(function () { ready = true; $('loading').remove(); renderTape(0); renderPage(); });
+  }
+  start();
+  window.__rings = { tapeAll: function () { return tape; }, eng: eng, ed: ed, lib: lib, send: send, importFiles: importFiles, state: function () { return { text: ed.text, cur: ed.cur, tape: tape.slice(-3), dicts: eng.dictionary.dicts.map(function (d) { return d.name + (d.enabled ? '' : ' (off)'); }), system: lib.system, words: !!eng.system.words }; } };
+})();
+</script>
+</body>
+</html>
