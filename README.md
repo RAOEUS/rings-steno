@@ -1,8 +1,8 @@
 # Rings
 
-**Stenography for two thumbs.** Rings is an Android keyboard that lets you write steno on a phone without looking at
-your hands. Two floating thumb sticks stand in for the steno machine, and the real [Plover](https://www.openstenoproject.org/plover/)
-engine does the translating.
+**Stenography for your thumbs.** Rings is an Android keyboard that lets you write steno on a phone without looking at
+your hands, with two thumbs or just one. Floating thumb sticks stand in for the steno machine, and the real
+[Plover](https://www.openstenoproject.org/plover/) engine does the translating.
 
 <p align="center">
   <img src="docs/screenshots/keyboard.png" width="250" alt="The Rings keyboard writing into another app, with both sticks open">
@@ -25,8 +25,9 @@ engine does the translating.
 
 ## What it is
 
-A steno machine has 23 keys and expects ten fingers. A phone gives you two thumbs and a sheet of glass you cannot
-feel. Rings bridges that gap with a stick under each thumb:
+A steno machine has 23 keys and expects ten fingers. A phone gives you two thumbs, sometimes only one, and a sheet of
+glass you cannot feel. Rings bridges that gap with a stick under each thumb, or a single stick that one thumb swaps
+between the two sides:
 
 - A stick opens **wherever your thumb lands**, so there is nothing to aim at.
 - Each stick is a small copy of that hand's side of the steno board. You push toward where the key sits.
