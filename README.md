@@ -85,7 +85,9 @@ only the push toward the edge gets shorter.
 
 You need an arm64 phone running Android 11 or later.
 
-1. Build the APK (see [Development](#development)) or take one from a release, then install it:
+1. Download the APK from the [latest release](https://github.com/RAOEUS/rings-steno/releases/latest) and open it on
+   the phone. Android asks once to let your browser or file manager install apps. Or build it yourself (see
+   [Development](#development)) and install it over USB:
 
    ```sh
    adb install -r app/build/outputs/apk/release/rings-1.0.0-release.apk
