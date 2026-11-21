@@ -1,0 +1,76 @@
+plugins {
+    id 'com.android.application'
+    id 'com.chaquo.python'
+}
+
+// Release signing. Put a keystore.properties beside settings.gradle with storeFile, storePassword, keyAlias and
+// keyPassword to sign with your own key (see the README). Without it a release build is signed with the debug key, which
+// installs fine on your own phone but is not for handing out.
+def keystoreFile = rootProject.file('keystore.properties')
+def keystore = new Properties()
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystore.load(it) }
+
+android {
+    namespace 'app.rings.steno'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'app.rings.steno'
+        minSdk 30
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+        ndk { abiFilters 'arm64-v8a' }      // the wheels in ../wheels are built for this ABI: see native/build_wheels.py
+    }
+
+    signingConfigs {
+        release {
+            if (keystoreFile.exists()) {
+                storeFile rootProject.file(keystore['storeFile'])
+                storePassword keystore['storePassword']
+                keyAlias keystore['keyAlias']
+                keyPassword keystore['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false      // the page calls into Java by name, and Python is not shrunk either
+            signingConfig keystoreFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach { outputFileName = "rings-${variant.versionName}-${variant.buildType.name}.apk" }
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version '3.11'      // 3.13 and later report sys.platform as "android", which Plover's platform layer does not know
+        pip {
+            // Plover's own requirements list pulls in its desktop windows and keyboard hooks, so nothing is resolved
+            // automatically: this is the engine, the libraries the engine imports, and the Lapwing plugin set.
+            options '--no-deps'
+            install 'plover==5.4.2'
+            install 'appdirs==1.4.4'
+            install 'pyserial==3.5'
+            install "$rootDir/wheels/plover_stroke-1.1.0-0-cp311-cp311-android_21_arm64_v8a.whl"
+            install "$rootDir/wheels/rtf_tokenize-1.0.1-0-cp311-cp311-android_21_arm64_v8a.whl"
+            install 'plover-lapwing-aio==1.5.0'
+            install 'plover-python-dictionary==1.2.1'
+            install 'plover-modal-dictionary==0.0.3'
+            install 'plover-stitching==0.1.0'
+            install 'plover-last-translation==0.0.2'
+            install 'plover-dict-commands==0.2.5'
+        }
+        // Plover opens its bundled dictionaries and word lists by file path, so these are unpacked onto the phone
+        extractPackages 'plover', 'plover_lapwing'
+    }
+}
