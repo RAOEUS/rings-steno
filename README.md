@@ -42,14 +42,12 @@ settings.
 
 <img src="docs/screenshots/lesson.png" width="230" align="right" alt="The left stick with the outer key A lit">
 
-| You do | You get |
-| --- | --- |
-| **Short push** | A key from the block of six: `T P H / K W R` on the left, `F P L / R B G` on the right |
-| **Long push** | The keys beyond the block: vowels below, `#` above, `S` and `*` to the sides, `T D S Z` on the right |
-| **Tap** | The stick's click: `S` on the left, `*` (undo) on the right |
-| **Roll** | Slide from one key onto its neighbour to take both |
-| **Lift both thumbs** | After a short wait the stroke is sent |
-| **One thumb** | A single stick does both hands: a tap swaps it between the left keys and the right |
+- **Short push**: a key from the block of six, `T P H / K W R` on the left and `F P L / R B G` on the right.
+- **Long push**: the keys beyond the block. Vowels below, `#` above, `S` and `*` to the sides, `T D S Z` on the right.
+- **Tap**: the stick's click, `S` on the left and `*` (undo) on the right.
+- **Roll**: slide from one key onto its neighbour to take both.
+- **Lift both thumbs**: after a short wait the stroke is sent.
+- **One thumb**: a single stick does both hands, and a tap swaps it between the left keys and the right.
 
 A double tick tells you a push has gone long. A longer tick tells you the stroke has gone. Three ticks mean the
 stroke had no entry.
