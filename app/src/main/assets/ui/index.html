@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rings</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="bar">
+    <div class="mark">Rings</div>
+    <button class="sys" id="btnSys" aria-label="Dictionaries and system"><span id="sysName">Lapwing</span><small id="sysCount"></small></button>
+    <button class="tool" id="btnLookup" aria-label="Look up a word" title="Look up"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+    <button class="tool" id="btnCopy" aria-label="Copy text" title="Copy"><svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 5.5v-1a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h1"/></svg></button>
+    <button class="tool" id="btnGuide" aria-label="How it works" title="How it works"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.5-1.2 1-1.2 2"/><circle cx="12" cy="16.9" r=".6"/></svg></button>
+    <button class="tool" id="btnSettings" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </header>
+  <main class="page" id="page" aria-live="polite"></main>
+  <div class="foot" id="foot">
+  <div class="setup" id="setup" hidden><span id="setupMsg"></span><button data-do="setup" id="setupBtn"></button><button data-do="setupx" class="x" aria-label="Dismiss">✕</button></div>
+  <div class="prompt" id="prompt" hidden>
+    <div class="phead"><b id="pTitle"></b><button data-do="pkb" id="pKb">ABC</button><button data-do="ptab" id="pTab">Tab</button><button data-do="psave" id="pSave" class="go">Save</button><button data-do="pclose" aria-label="Close">✕</button></div>
+    <div class="pfield" id="pStrokes" data-do="pstrokes"><small>strokes</small><span></span></div>
+    <div class="pfield" id="pText" data-do="ptext"><small>translation</small><span></span></div>
+    <div class="pinfo" id="pInfo"></div>
+  </div>
+  <div class="tape" id="tapeBox"><div id="tape"></div><div class="toast" id="toast"></div>
+    <div class="tools" id="tools" hidden>
+      <button data-do="lookup" aria-label="Look up"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
+      <button data-do="add" aria-label="Add a translation"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button data-do="app" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button data-do="keys" aria-label="Change keyboard"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></svg></button>
+    </div>
+  </div>
+  <section class="deck" id="deck" aria-label="Thumb sticks">
+    <div class="qwerty" id="qwerty"></div>
+    <div class="ring live l" id="ringL"></div><div class="ring live r" id="ringR"></div>
+    <div class="arpbar"><button data-arp="back" id="arpBack">Back</button><button data-arp="send" id="arpSend" class="go">Send</button><button data-arp="clear" id="arpClear">Clear</button></div>
+    <div class="maps l" id="mapsL"></div><div class="maps r" id="mapsR"></div>
+    <div class="loading" id="loading"><div><b>Opening your dictionaries</b>One moment</div></div>
+  </section>
+  </div>
+</div>
+
+<div class="scrim" id="library" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="libTitle">Dictionaries</h2>
+    <p class="lead">Each system keeps its own stack. The top dictionary wins, as in Plover.</p>
+    <div class="seg" id="sysSeg"><button data-sys="Lapwing">Lapwing</button><button data-sys="English Stenotype">Plover (English Stenotype)</button></div>
+    <div class="plain">
+      <span class="filebtn go">Add files<input type="file" id="fileIn" multiple aria-label="Add dictionary files"></span>
+      <button id="btnAddTr">Add a translation</button>
+      <button id="btnExport">Copy user.json</button>
+      <button id="btnDefaults" hidden>Restore defaults</button>
+    </div>
+    <p class="fine">Or share a dictionary file to Rings from any other app, or open one with Rings. It takes .json, .py, .modal and .rtf files, and .zip files of them. A plugin's .whl file is added the same way.</p>
+    <p class="status" id="libStatus" aria-live="polite"></p>
+    <div id="dictList"></div>
+    <div id="libEmpty"></div>
+    <div id="plugBox" hidden>
+      <h3>Plugins</h3>
+      <p class="fine" style="margin:0 0 6px">Plover's own plugins, loaded as Plover loads them. To add one, get its .whl file (on PyPI, under Download files) and share or open it with Rings, or use Add files. A plugin runs as code inside Rings, so add only ones you trust. Only pure Python plugins can run on a phone.</p>
+      <div id="plugList"></div>
+    </div>
+    <p class="lead" id="libNote" style="margin-top:14px"></p>
+  </div>
+</div>
+
+<div class="scrim" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="guideTitle">A steno board for two thumbs</h2>
+    <div class="plain" style="margin:0 0 14px"><button class="go" id="btnLearn">Start the lessons</button></div>
+    <p class="lead">Each thumb has one stick. It opens wherever that thumb lands on its half, so there is nothing to aim at. The directions are the board itself: push toward where the key sits. Keys add up until the stroke is sent, a moment after both thumbs are off the glass. That is the only clock: how long a thumb rests never changes what its push means.</p>
+    <dl class="moves">
+      <dt>short push</dt><dd>Your hand's block of six, as on the board: T P H over K W R on the left, -F -P -L over -R -B -G on the right. Push toward a key and lift. Push again for another key from the block.</dd>
+      <dt>long push</dt><dd>Keep going past the block and you reach the keys beyond it, where the board has them. The single keys sit out beyond the gaps between the block's keys, so sliding out along a gap touches nothing on the way: S- out to the left between T and K, * out to the right between H and R, A down between K and W, O down between W and R. On the right it is -S and -Z out to the sides, E and U down through the gaps, -T and -D up through them. Straight down through the middle key is both vowels; straight up is the number bar on the left, -T with -D on the right. A strong double tick tells you the push went long. A long push gives the far key in place of any near one, never both.</dd>
+      <dt>tap</dt><dd>A quick tap is the stick's click: S- on the left, * on the right. A right tap on its own undoes the last stroke.</dd>
+      <dt>dead zones</dt><dd>Nothing counts until your thumb has clearly left the spot where it landed. A thumb that rests, or slides a little and lifts, does nothing. The gaps between the block's keys are dead as well: a short push that ends in one is nothing, never a guess. Rolling onto a neighbour takes a clear move, so a wobble adds no key. A longer tick tells you each stroke has gone and the next can start.</dd>
+      <dt>near an edge</dt><dd>The stick is cut off flat where it meets the edge, so all of it stays on the screen. Every key keeps its direction and its width; only pushes toward the edge are shorter, by as much as the room allows. The double tick still marks where long begins.</dd>
+    </dl>
+    <h3>More than one key from the block</h3>
+    <dl class="moves">
+      <dt>one by one</dt><dd>Push, lift, push again. Each push adds its key, so the rolls below are shortcuts you can leave for later.</dd>
+      <dt>neighbours</dt><dd>Roll from one key onto the next and you get both, in either direction. Keep rolling and every key you cross is added. The same goes for the keys beyond the block: -T rolled across to -D, A down round to O. A roll stays in the ring it started in, however far it strays.</dd>
+      <dt>go back over</dt><dd>Roll back onto a key you have already crossed and it is taken out again: T, P, H, then back onto P, is TH. That is the whole rule. Settings has two others if you prefer them: plover_controller's, where rolling against steno order keeps only the two ends, and one where every key you cross simply stays in.</dd>
+      <dt>or two trips</dt><dd>Without lifting, come back to the centre and push out again, short or long.</dd>
+    </dl>
+    <h3>Arpeggiate, for learning</h3>
+    <p class="lead">Switch it on in Settings and the clock stops. Each push adds its keys and they stay down while you find the next one. A short push goes to the block, a long push to the keys beyond it, and pushing a key that is already down takes it out. Back undoes your last push and Clear empties the stroke, so a slip never has to be sent. Press Send when the stroke is right, the way the space bar does in Plover's arpeggiate. Taps are the sticks' clicks as usual: S- on the left, * on the right, so a right tap and Send undoes the last stroke.</p>
+    <p class="lead" style="margin-top:12px">The block's six directions are laid out as on plover_controller. KAT is a short push down-left for K, a long push down-left for A, and on the right a long push up-left for -T. The tape shows the stroke you are building in red.</p>
+    <h3>What does the writing</h3>
+    <p class="lead">The engine is Plover itself, by the Open Steno Project, running inside the app with its own plugins: translation, undo, spelling rules, commands, Python and modal dictionaries all behave as they do on a computer because they are the same code. The six-way layout of the block, and the Backward skips roll rule, are the default mapping of plover_controller by Tadeo Kondrak and contributors. Plover and that mapping are under the GNU General Public License, version 2 or later. Rings' own code is under the MIT licence; because the app carries Plover and its plugins inside it, the app as a whole is passed on under the GPL.</p>
+  </div>
+</div>
+
+<div class="scrim" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="panel">
+    <button class="close" data-close aria-label="Close">✕</button>
+    <h2 id="setTitle">Settings</h2>
+    <label class="switch" for="optArp"><span>Arpeggiate<small>For learning. Build a stroke one key at a time with no clock running, then press Send.</small></span><input type="checkbox" class="tog" id="optArp"></label>
+    <h3>Sticks</h3>
+    <div class="plain" style="margin:0 0 4px"><button class="go" id="btnFit">Fit the sticks to my thumbs</button></div>
+    <div id="numSticks"></div>
+    <div class="switch pick"><span>Rolls<small>What a roll keeps. Go back drops: every key you cross, and coming back onto one takes it out, so T, P, H, back onto P is TH. Backward skips: rolling with steno order keeps every key, against it keeps only the two ends. Keep all: every key you cross stays in.</small></span><span class="seg" id="rollSeg"><button data-r="back">Go back drops</button><button data-r="steno">Backward skips</button><button data-r="all">Keep all</button></span></div>
+    <label class="switch" for="optTap"><span>Tap a stick for S- and *<small>Like clicking the sticks. Both keys also sit beside the left block.</small></span><input type="checkbox" class="tog" id="optTap" checked></label>
+    <div id="numTap"></div>
+    <h3>Timing</h3>
+    <div id="numTime"></div>
+    <h3>Feedback</h3>
+    <div id="numFeel"></div>
+    <label class="switch" for="optBrief" id="briefRow"><span>Suggest shorter outlines<small>When you write something the long way and your dictionaries have a shorter outline for it, the line under the tape shows it.</small></span><input type="checkbox" class="tog" id="optBrief" checked></label>
+    <h3>Look</h3>
+    <div class="switch pick"><span>Theme<small>System follows your phone or computer.</small></span><span class="seg" id="themeSeg"><button data-th="system">System</button><button data-th="light">Light</button><button data-th="dark">Dark</button></span></div>
+    <div id="numLook"></div>
+    <label class="switch" for="optHints"><span>Show the letters<small>Turn off once the sticks are in your thumbs.</small></span><input type="checkbox" class="tog" id="optHints" checked></label>
+    <label class="switch" for="optCap"><span>Start with a capital<small>Capitalise the first word on a clear page.</small></span><input type="checkbox" class="tog" id="optCap"></label>
+    <div class="plain"><button id="btnReset">Reset every setting</button><button id="btnClear" class="danger">Clear the page</button></div>
+  </div>
+</div>
+
+<!-- Order matters: each file may use what the ones before it define. -->
+<script src="js/steno.js"></script>
+<script src="js/core.js"></script>
+<script src="js/page.js"></script>
+<script src="js/rollmap.js"></script>
+<script src="js/sticks.js"></script>
+<script src="js/panel.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/library.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
