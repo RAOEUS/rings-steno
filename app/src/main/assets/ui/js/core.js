@@ -7,6 +7,7 @@ var $ = function (id) {
 // Every setting. Lengths are CSS pixels, angles degrees, times milliseconds. NUMS below gives each number's range
 var opt = {
   theme: 'system',
+  hands: 2, // 2: a stick for each thumb. 1: one stick that a tap swaps between the left keys and the right
   dead: 30,
   far: 72,
   outer: 46,
@@ -264,7 +265,9 @@ function dbSet(k, v) {
   });
 }
 function saveMeta() {
-  dbSet('meta', { opt: opt });
+  var saved = Object.assign({}, opt);
+  if (lesson && lesson.handsBefore) saved.hands = lesson.handsBefore; // a lesson has only borrowed one-thumb mode: do not keep it
+  dbSet('meta', { opt: saved });
 }
 
 /* ---------- feedback ---------- */

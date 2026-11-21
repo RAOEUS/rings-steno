@@ -45,7 +45,7 @@ window.__rings = {
   // the app screen came back to the front: the keyboard may have been switched on, the theme changed
   resume: function () {
     setupState();
-    applyTheme();
+    window.__rings.reload(); // a setting may have been changed from the keyboard
   },
   // settings were changed on the app screen while the keyboard's copy of the page stayed loaded: read them again
   reload: function () {

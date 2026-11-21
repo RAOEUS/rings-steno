@@ -58,9 +58,17 @@ async def main():
             out['lessons'] = await a.evaluate("""(async () => { document.getElementById('btnClear').click(); document.getElementById('btnGuide').click(); document.getElementById('btnLearn').click(); const menu = document.querySelectorAll('.lesson button').length; document.querySelector('[data-lesson="0"]').click();
               const goal = document.querySelector('.goal').textContent, pic = Array.from(document.querySelectorAll('.lesson .hand')).map(h => h.querySelector('b').textContent + (h.classList.contains('idle') ? '(dim)' : '')).join('/');
               await T.stroke(() => T.path('l', [[150, 'S']])); const wrong = document.querySelector('.msg').textContent; await T.stroke(() => T.path('l', [[210, 'S']])); await T.sleep(800); const next = document.querySelector('.top span').textContent;
-              document.querySelector('[data-lesson=menu]').click(); document.querySelector('[data-lesson="8"]').click(); const word = document.querySelector('.goal') ? document.querySelector('.goal').textContent : document.querySelector('.lesson h2').textContent;
+              document.querySelector('[data-lesson=menu]').click(); document.querySelector('[data-lesson="9"]').click(); const word = document.querySelector('.goal') ? document.querySelector('.goal').textContent : document.querySelector('.lesson h2').textContent;
               document.querySelector('[data-lesson=menu]').click(); document.querySelector('[data-lesson=calib]').click(); const fit = document.querySelector('.lesson h2').textContent; document.querySelector('[data-lesson=calib-cancel]').click(); document.querySelector('[data-lesson=exit]').click();
               return menu + ' buttons | asks ' + goal + ' | ' + pic + ' | wrong: ' + wrong + ' | then: ' + next + ' | word lesson: ' + word + ' | fit: ' + fit; })()""")
+            out['one thumb'] = await a.evaluate("""(async () => { document.querySelector('#handSeg [data-h="1"]').click(); const got = [];
+              got.push('push: ' + await T.stroke(() => T.path('l', [[150, 'S']])));
+              got.push('tap then push: ' + await T.stroke(() => { T.tap('r'); T.path('l', [[270, 'S']]); }));
+              got.push('K, tap, long up-left: ' + await T.stroke(() => { T.path('r', [[150, 'S']]); T.tap('l'); T.path('r', [[230, 'L']]); }));
+              got.push('next stroke starts left: ' + await T.stroke(() => T.path('r', [[270, 'S']])));
+              got.push('tap twice then push: ' + await T.stroke(() => { T.tap('l'); T.tap('l'); T.path('l', [[90, 'S']]); }));
+              const tint = document.getElementById('deck').classList.contains('one'); document.querySelector('#handSeg [data-h="2"]').click();
+              return got.join(' | ') + ' | pad marked: ' + tint + ' | back to two: ' + !document.getElementById('deck').classList.contains('one'); })()""")
             out['look up panel'] = await a.evaluate("""(async () => { document.getElementById('btnLookup').click(); for (const ch of 'cat') Array.from(document.querySelectorAll('#qwerty [data-q]')).find(n => n.dataset.q === ch).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 8 }));
               const r = document.getElementById('pTitle').textContent + ': ' + document.getElementById('pText').lastChild.textContent + ' -> ' + document.getElementById('pInfo').textContent.slice(0, 40) + ' | keys ' + document.querySelectorAll('#qwerty [data-q]').length;
               document.querySelector('[data-do=pclose]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 8 })); return r + ' | closed ' + document.getElementById('prompt').hidden; })()""")

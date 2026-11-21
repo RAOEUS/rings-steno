@@ -30,6 +30,9 @@ function applyTheme() {
 function applyOpts() {
   applyTheme();
   document.documentElement.style.setProperty('--navb', NATIVE.navInset() + 'px'); // stay clear of the phone's gesture bar
+  document.querySelectorAll('#handSeg button').forEach(function (b) {
+    b.setAttribute('aria-pressed', +b.dataset.h === opt.hands ? 'true' : 'false');
+  });
   document.querySelectorAll('#rollSeg button').forEach(function (b) {
     b.setAttribute('aria-pressed', b.dataset.r === opt.rolls ? 'true' : 'false');
   });
@@ -119,6 +122,13 @@ function setNum(e) {
 } // feedback settings give a sample of the long-push tick
 $('settings').addEventListener('input', setNum);
 $('settings').addEventListener('change', setNum);
+$('handSeg').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) return;
+  opt.hands = +b.dataset.h;
+  saveMeta();
+  applyOpts();
+});
 $('rollSeg').addEventListener('click', function (e) {
   var b = e.target.closest('button');
   if (!b) return;

@@ -11,8 +11,12 @@ function doAct(what) {
     else openPrompt(what);
   } else if (what === 'app')
     NATIVE.openApp('settings'); // the gear on the keyboard: straight to Settings on the app screen
-  else if (what === 'keys') NATIVE.pickKeyboard();
-  else if (what === 'setup') {
+  else if (what === 'hands') {
+    opt.hands = opt.hands === 1 ? 2 : 1;
+    saveMeta();
+    applyOpts();
+    toast(opt.hands === 1 ? 'One thumb: a tap swaps between the left keys and the right' : 'Two thumbs');
+  } else if (what === 'setup') {
     if ($('setup').dataset.s === 'off') NATIVE.keyboardSettings();
     else NATIVE.pickKeyboard();
   } else if (what === 'setupx') {

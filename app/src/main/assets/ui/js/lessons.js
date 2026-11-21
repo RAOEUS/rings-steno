@@ -73,6 +73,8 @@ var LESSONS = [
     intro:
       'A quick tap, with no slide, is the middle of the stick: S on the left, the star on the right. The star on its own undoes your last stroke when you are writing.',
     keys: 'S * S *',
+    introOne:
+      'With one thumb a tap swaps sides instead, so here S and the star are long pushes on the left keys: S out to the left, the star out to the right.',
   },
   {
     name: 'Long pushes, left',
@@ -105,6 +107,13 @@ var LESSONS = [
     intro:
       'For two keys that sit side by side, push to the first and roll your thumb round onto the second before you lift. Keep rolling, the way the keys read, for a third.',
     keys: 'TP PH KW WR TK HR -FP -PL -RB -BG TPH KWR -TS -DZ',
+  },
+  {
+    name: 'One thumb',
+    one: true,
+    intro:
+      'One thumb can do both hands. There is a single stick, and it starts every stroke on the left keys. A quick tap, with no slide, swaps it to the right keys, and another tap swaps it back. The pad changes colour with the side it is on, and the dot in the picture follows it: two ticks say right, one says left. When the stroke is sent the stick is back on the left. This lesson switches to one thumb while it runs; to stay that way, choose One under Thumbs in Settings or use the hand button beside the keyboard tape.',
+    keys: 'K -P T -L KA -B K-B TOP KAT RUG WEB',
   },
   { name: 'Short words from your dictionaries', words: [1, 3] },
   { name: 'Longer words from your dictionaries', words: [4, 99] },
@@ -147,9 +156,35 @@ function lessonItems(L) {
   });
   return shuffled(items).slice(0, 10);
 }
+// a lesson about one thumb switches to it while it runs, and puts the writer's own choice back afterwards
+function lessonHands(want) {
+  if (lesson && lesson.handsBefore) {
+    opt.hands = lesson.handsBefore;
+    lesson.handsBefore = 0;
+    applyOpts();
+  }
+  if (want && opt.hands !== 1) {
+    var before = opt.hands;
+    opt.hands = 1;
+    applyOpts();
+    return before;
+  }
+  return 0;
+}
 function startLesson(n) {
-  var items = lessonItems(LESSONS[n]);
-  lesson = { n: n, items: items, i: 0, typed: [], msg: '', ok: false, done: !items.length, empty: !items.length };
+  var before = lessonHands(LESSONS[n].one),
+    items = lessonItems(LESSONS[n]);
+  lesson = {
+    n: n,
+    items: items,
+    i: 0,
+    typed: [],
+    msg: '',
+    ok: false,
+    done: !items.length,
+    empty: !items.length,
+    handsBefore: before,
+  };
   resetChord();
   renderPage();
   refresh();
@@ -194,6 +229,21 @@ function lessonStroke(mask) {
     why;
   renderPage();
 }
+// which lessons have been finished, by name. Older versions kept only a count of the first ones done
+function lessonsDone() {
+  if (!opt.done) {
+    opt.done = {};
+    LESSONS.filter(function (L) {
+      return !L.one;
+    })
+      .slice(0, opt.learned || 0)
+      .forEach(function (L) {
+        opt.done[L.name] = true;
+      });
+    delete opt.learned;
+  }
+  return opt.done;
+}
 function lessonNext() {
   if (!lesson || lesson.menu) return;
   lesson.i++;
@@ -201,8 +251,8 @@ function lessonNext() {
   lesson.msg = '';
   if (lesson.i >= lesson.items.length) {
     lesson.done = true;
-    if (!(opt.learned > lesson.n)) {
-      opt.learned = lesson.n + 1;
+    if (!lessonsDone()[LESSONS[lesson.n].name]) {
+      opt.done[LESSONS[lesson.n].name] = true;
       saveMeta();
     }
   }
@@ -220,6 +270,14 @@ var CALIB = [
   ['r', 'short'],
   ['r', 'long'],
 ];
+function calibSteps() {
+  return opt.hands === 1
+    ? [
+        ['1', 'short'],
+        ['1', 'long'],
+      ]
+    : CALIB; // one thumb: it is measured once and both sticks take its turn
+}
 function startCalib() {
   lesson = { menu: true };
   calib = { step: 0, got: [[], [], [], []], msg: '', done: false };
@@ -229,9 +287,9 @@ function startCalib() {
 }
 function calibPush(side, dir, len) {
   if (!calib || calib.done) return;
-  var want = CALIB[calib.step];
+  var want = calibSteps()[calib.step];
   if (len < 8) return; // a rest or a slip, not a push
-  if (side !== want[0])
+  if (want[0] !== '1' && side !== want[0])
     calib.msg =
       'That was your ' +
       (side === 'l' ? 'left' : 'right') +
@@ -243,7 +301,7 @@ function calibPush(side, dir, len) {
     calib.got[calib.step].push([dir, len]);
     buzz(6);
     if (calib.got[calib.step].length >= 3) calib.step++;
-    if (calib.step >= CALIB.length) calibDone();
+    if (calib.step >= calibSteps().length) calibDone();
   }
   renderPage();
 }
@@ -267,8 +325,9 @@ function calibDone() {
     });
     return Math.max(-45, Math.min(45, Math.round(((angle(sx, sy) - 270 + 540) % 360) - 180)));
   }
-  var short = (mid(0) + mid(2)) / 2,
-    long = (mid(1) + mid(3)) / 2;
+  var one = opt.hands === 1,
+    short = one ? mid(0) : (mid(0) + mid(2)) / 2,
+    long = one ? mid(1) : (mid(1) + mid(3)) / 2;
   if (long < short * 1.4) {
     calib = {
       step: 0,
@@ -288,7 +347,7 @@ function calibDone() {
   opt.dead = Math.round(Math.max(10, Math.min(opt.far - 12, short * 0.45))); // a short push clears the dead zone twice over
   opt.outer = Math.round(Math.max(24, Math.min(140, long - opt.far + 24)));
   opt.tiltL = turn(calib.got[0].concat(calib.got[1]));
-  opt.tiltR = turn(calib.got[2].concat(calib.got[3]));
+  opt.tiltR = one ? opt.tiltL : turn(calib.got[2].concat(calib.got[3]));
   calib.done = true;
   saveMeta();
   applyOpts();
@@ -309,14 +368,16 @@ function renderCalib() {
       '\u00B0</b>, so that the way each thumb really moves is straight up. Try a few strokes; every number is in Settings if you want to nudge one.</p>' +
       '<div class="row"><button class="go" data-lesson="calib-keep">Keep these</button><button data-lesson="calib-undo">Put it back</button></div>';
   } else {
-    var w = CALIB[c.step],
+    var w = calibSteps()[c.step],
       n = c.got[c.step].length;
     h =
       '<div class="top"><span>Fit the sticks \u00B7 step ' +
       (c.step + 1) +
-      ' of 4</span><button data-lesson="calib-cancel">Cancel</button></div>' +
+      ' of ' +
+      calibSteps().length +
+      '</span><button data-lesson="calib-cancel">Cancel</button></div>' +
       '<h2>' +
-      (w[0] === 'l' ? 'Left' : 'Right') +
+      (w[0] === '1' ? 'Your' : w[0] === 'l' ? 'Left' : 'Right') +
       ' thumb: a ' +
       w[1] +
       ' push straight up</h2>' +
@@ -336,6 +397,12 @@ function renderCalib() {
   }
   $('page').innerHTML = '<div class="lesson">' + h + '</div>';
 }
+// how to make a key, in words, for the way the sticks are set up now
+function howTo(k) {
+  if (opt.hands !== 1) return HOW[k];
+  var text = k === 'S-' ? 'left thumb, long push left' : k === '*' ? 'left thumb, long push right' : HOW[k];
+  return text.replace('left thumb', 'left keys').replace('right thumb', 'right keys (tap to swap)');
+}
 function renderLesson() {
   var h,
     sides = '';
@@ -352,7 +419,7 @@ function renderLesson() {
           '<button data-lesson="' +
           i +
           '">' +
-          (opt.learned > i ? '\u2713 ' : '') +
+          (lessonsDone()[L.name] ? '\u2713 ' : '') +
           (i + 1) +
           '. ' +
           esc(L.name) +
@@ -407,7 +474,7 @@ function renderLesson() {
       h =
         top +
         '<button data-lesson="skip">Skip</button><button data-lesson="menu">Lessons</button></div>' +
-        (lesson.i === 0 && L.intro ? '<p>' + esc(L.intro) + '</p>' : '') +
+        (lesson.i === 0 && L.intro ? '<p>' + esc(opt.hands === 1 && L.introOne ? L.introOne : L.intro) + '</p>' : '') +
         '<div class="goal">' +
         esc(it.word || stenoOf(it.mask)) +
         (it.word ? '<small>written ' + esc(it.outlines[0]) + '</small>' : '') +
@@ -415,7 +482,7 @@ function renderLesson() {
         '<ul>' +
         ks
           .map(function (k) {
-            return '<li><b>' + esc(k.replace('-', '')) + '</b> ' + HOW[k] + '</li>';
+            return '<li><b>' + esc(k.replace('-', '')) + '</b> ' + howTo(k) + '</li>';
           })
           .join('') +
         '</ul>' +
@@ -428,7 +495,13 @@ function renderLesson() {
               sd +
               (use ? '' : ' idle') +
               '"><b>' +
-              (sd === 'l' ? 'Left thumb' : 'Right thumb') +
+              (opt.hands === 1
+                ? sd === 'l'
+                  ? 'Left keys'
+                  : 'Right keys'
+                : sd === 'l'
+                  ? 'Left thumb'
+                  : 'Right thumb') +
               '</b><div class="ring demo ' +
               sd +
               '" data-side="' +
@@ -489,10 +562,12 @@ $('page').addEventListener('click', function (e) {
     return;
   }
   if (what === 'exit') {
+    lessonHands(false);
     lesson = null;
     renderPage();
     refresh();
   } else if (what === 'menu') {
+    lessonHands(false);
     lesson = { menu: true };
     renderPage();
     refresh();

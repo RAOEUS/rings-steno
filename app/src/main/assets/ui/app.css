@@ -867,6 +867,25 @@ input:focus-visible {
   line-height: 1.45;
   color: var(--ink-soft);
 }
+/* one thumb: a single stick over the whole pad, tinted with the hand whose keys it is on */
+.deck.one {
+  background: color-mix(in srgb, var(--left) 10%, var(--deck));
+}
+.deck.one.right {
+  background: color-mix(in srgb, var(--right) 10%, var(--deck));
+}
+.deck.one::before,
+.deck.one .maps.away {
+  display: none;
+}
+.deck.one .maps {
+  width: 100%;
+  left: 0;
+  right: 0;
+}
+.lesson .hand.now b::after {
+  content: ' \25CF';
+}
 .loading {
   border-radius: inherit;
   position: absolute;

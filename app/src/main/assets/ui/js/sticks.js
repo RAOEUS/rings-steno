@@ -154,13 +154,16 @@ function drawRing(el, side, k, tilt) {
   el.innerHTML =
     g +
     loop('dead', r0) +
-    '<text class="hub" data-k="' +
-    (side === 'l' ? 'S-' : '*') +
-    '" x="0" y="' +
-    (side === 'l' ? 0 : 5) +
-    '">' +
-    (side === 'l' ? 'S' : '*') +
-    '</text></svg>';
+    (opt.hands === 1
+      ? '<text class="hub" x="0" y="0">' + (side === 'l' ? 'L' : 'R') + '</text>' // one thumb: which hand's keys this is
+      : '<text class="hub" data-k="' +
+        (side === 'l' ? 'S-' : '*') +
+        '" x="0" y="' +
+        (side === 'l' ? 0 : 5) +
+        '">' +
+        (side === 'l' ? 'S' : '*') +
+        '</text>') +
+    '</svg>';
 }
 function drawMaps(side) {
   var K = KEY[side];
@@ -179,13 +182,15 @@ function drawMaps(side) {
     '<div class="mapwrap one"><div class="map">' +
     block +
     '</div><small>short push</small>' +
-    (opt.tap
-      ? '<small class="tap">tap = <b data-k="' +
-        (side === 'l' ? 'S-' : '*') +
-        '">' +
-        (side === 'l' ? 'S' : '*') +
-        '</b></small>'
-      : '') +
+    (opt.hands === 1
+      ? '<small class="tap">tap = ' + (side === 'l' ? 'right keys' : 'left keys') + '</small>'
+      : opt.tap
+        ? '<small class="tap">tap = <b data-k="' +
+          (side === 'l' ? 'S-' : '*') +
+          '">' +
+          (side === 'l' ? 'S' : '*') +
+          '</b></small>'
+        : '') +
     '</div><div class="mapwrap two"><div class="map' +
     (side === 'l' ? '' : ' wide') +
     '">' +
@@ -203,6 +208,9 @@ var deck = $('deck'),
   chord = 0,
   hist = [],
   sendTimer = 0;
+// One thumb (opt.hands === 1): a single stick over the whole pad. It is on one hand's keys at a time, starts every
+// stroke on the left, and a quick tap swaps it to the other hand.
+var hand = 'l';
 function pending() {
   var m = 0;
   for (var id in touches) m |= resolve(touches[id], touches[id].path);
@@ -213,6 +221,14 @@ function refresh() {
   (lesson ? document : deck).querySelectorAll('#deck [data-k], .ring.demo [data-k]').forEach(function (n) {
     n.classList.toggle('on', !!(m & BIT[n.dataset.k]));
   }); // the lesson's pictures light up with your thumbs
+  var one = opt.hands === 1;
+  deck.classList.toggle('one', one);
+  deck.classList.toggle('right', one && hand === 'r');
+  $('mapsL').classList.toggle('away', one && hand !== 'l');
+  $('mapsR').classList.toggle('away', one && hand !== 'r');
+  document.querySelectorAll('.lesson .hand').forEach(function (h) {
+    h.classList.toggle('now', one && h.classList.contains(hand));
+  });
   $('arpBack').disabled = !hist.length;
   $('arpClear').disabled = !chord;
   $('arpSend').disabled = !chord;
@@ -232,6 +248,7 @@ function sendNow() {
   var m = chord;
   chord = 0;
   hist = [];
+  if (m) hand = 'l'; // one thumb: the stick goes back to the left once a stroke has gone. A tap on its own keeps, however long you take
   refresh();
   if (m) {
     buzz(14);
@@ -242,6 +259,7 @@ function resetChord() {
   clearTimeout(sendTimer);
   chord = 0;
   hist = [];
+  hand = 'l';
 }
 function closePath(t) {
   if (!t.path.length) return;
@@ -359,7 +377,7 @@ foot.addEventListener('pointerdown', function (e) {
   var d = deck.getBoundingClientRect(),
     x = e.clientX - d.left,
     y = e.clientY - d.top,
-    side = x < d.width / 2 ? 'l' : 'r';
+    side = opt.hands === 1 ? hand : x < d.width / 2 ? 'l' : 'r';
   for (var o in touches) if (touches[o].side === side) return; // one thumb per side
   clearTimeout(sendTimer);
   var t = {
@@ -414,8 +432,13 @@ function lift(e) {
     track(t, e.clientX - d.left, e.clientY - d.top);
   } // where the thumb left the glass counts: the last move can lag a fast push
   if (t.path.length) closePath(t);
-  else if (!t.did && e.type === 'pointerup' && opt.tap && t.maxR < opt.tapr && performance.now() - t.t0 < opt.tapms)
-    press(BIT[t.side === 'l' ? 'S-' : '*']); // a quick tap is the stick's click; a rest, or a slide that never left the dead zone, is nothing
+  else if (!t.did && e.type === 'pointerup' && t.maxR < opt.tapr && performance.now() - t.t0 < opt.tapms) {
+    // a quick tap. A rest, or a slide that never left the dead zone, is nothing
+    if (opt.hands === 1) {
+      hand = hand === 'l' ? 'r' : 'l'; // one thumb: it swaps the stick to the other hand's keys
+      buzz(hand === 'r' ? [10, 40, 10] : 6); // two ticks: now on the right. One: back on the left
+    } else if (opt.tap) press(BIT[t.side === 'l' ? 'S-' : '*']); // two thumbs: it is the stick's click
+  }
   delete touches[e.pointerId];
   t.mark.classList.remove('show');
   $(t.side === 'l' ? 'mapsL' : 'mapsR').classList.remove('hide');

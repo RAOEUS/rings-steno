@@ -47,6 +47,7 @@ settings.
 | **Tap** | The stick's click: `S` on the left, `*` (undo) on the right |
 | **Roll** | Slide from one key onto its neighbour to take both |
 | **Lift both thumbs** | After a short wait the stroke is sent |
+| **One thumb** | A single stick does both hands: a tap swaps it between the left keys and the right |
 
 A double tick tells you a push has gone long. A longer tick tells you the stroke has gone. Three ticks mean the
 stroke had no entry.
@@ -65,6 +66,7 @@ only the push toward the edge gets shorter.
   plugin registry. Nothing is reimplemented.
 - **Lapwing and Plover systems built in**, each with its own dictionary stack, including Lapwing's Python and modal
   dictionaries.
+- **One-thumb mode** for writing with one hand, with a single stick that a tap swaps between the two sides.
 - **Lessons** that teach the sticks step by step, and word drills drawn from whatever dictionaries you have loaded.
 - **Fit the sticks to your thumbs.** Twelve test pushes set the distances and the tilt of each stick to match how your
   thumbs really move.
@@ -101,12 +103,29 @@ The first launch opens on the lessons. Start with **Fit the sticks to your thumb
   <img src="docs/screenshots/fit.png" width="230" alt="Fitting the sticks: a short push straight up with the left thumb">
 </p>
 
-Ten short lessons go from single keys to rolls to whole words. Each step names a key or stroke, says how to make it,
+Eleven short lessons go from single keys to rolls, one-thumb writing and whole words. Each step names a key or stroke, says how to make it,
 and shows a picture of each stick that lights up with what your thumb is holding. Nothing you write in a lesson is
 typed anywhere.
 
 Fitting asks for short and long pushes straight up with each thumb. From those it sets the dead zone, the distance
 where a long push begins, and how far each stick is turned so that your thumb's natural "up" counts as up.
+
+### One thumb
+
+<img src="docs/screenshots/one-thumb.png" width="230" align="right" alt="The one-thumb lesson with the stick on the right keys">
+
+Choose **One** under Thumbs in Settings, or tap the two-ring button beside the keyboard's tape, and the pad becomes a
+single stick you can land on anywhere.
+
+- Every stroke starts on the **left keys**.
+- A quick **tap** swaps the stick to the **right keys**, and another tap swaps it back.
+- Two ticks say right, one says left, and the pad changes colour with the side it is on.
+- Once the stroke is sent the stick is back on the left. A tap on its own keeps for as long as you take.
+
+With one thumb, `S` and `*` are long pushes on the left keys (left and right), because the tap is busy swapping.
+The same button or setting takes you back to two thumbs.
+
+<br clear="right">
 
 ### Look up and Add translation
 
@@ -115,7 +134,7 @@ where a long push begins, and how far each stick is turned so that your thumb's 
   <img src="docs/screenshots/add-translation.png" width="230" alt="Adding a translation for a word that was just fingerspelled">
 </p>
 
-Both panels open from the buttons beside the tape, or from your dictionary's own strokes for `{PLOVER:LOOKUP}` and
+Both panels open from the buttons beside the tape (magnifier and plus), or from your dictionary's own strokes for `{PLOVER:LOOKUP}` and
 `{PLOVER:ADD_TRANSLATION}`.
 
 - **Look up** uses plain letter keys, because fingerspelling a word to find its outline is no fun.
@@ -148,6 +167,7 @@ with a number box. The ones worth knowing first:
 
 | Setting | What it does |
 | --- | --- |
+| Thumbs | Two sticks, or one stick that a tap swaps between sides |
 | Dead zone | How far a thumb moves before anything counts |
 | Long push | How far out the outer keys begin |
 | Wait before sending | How long you have to land a thumb again before the stroke is sent |
