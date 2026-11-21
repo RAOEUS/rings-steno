@@ -43,9 +43,9 @@ async def main():
         await a.evaluate(HELPERS)
         out = {'pages': sorted(pages), 'url': a.url[-28:]}
         out['settings carried over'] = await a.evaluate("['dead','far','outer','gap','tiltL','tiltR','wait','vib'].map(k => k + '=' + T.num(k)).join(' ') + ' rolls=' + document.querySelector('#rollSeg [aria-pressed=true]').dataset.r")
-        keep = await a.evaluate("({ wait: T.num('wait'), arp: document.getElementById('optArp').checked, rolls: document.querySelector('#rollSeg [aria-pressed=true]').dataset.r })")
+        keep = await a.evaluate("({ wait: T.num('wait'), arp: document.getElementById('optArp').checked, rolls: document.querySelector('#rollSeg [aria-pressed=true]').dataset.r, hands: document.querySelector('#handSeg [aria-pressed=true]').dataset.h })")
         try:
-            await a.evaluate("T.setNum('wait', 200); if (document.getElementById('optArp').checked) document.getElementById('optArp').click(); document.querySelector('#rollSeg [data-r=back]').click(); document.querySelectorAll('.scrim.show').forEach(s => s.classList.remove('show')); (document.querySelector('[data-lesson=menu]') || {click(){}}).click(); (document.querySelector('[data-lesson=exit]') || {click(){}}).click(); document.getElementById('btnClear').click()")
+            await a.evaluate("document.querySelector('#handSeg [data-h=\"2\"]').click(); T.setNum('wait', 200); if (document.getElementById('optArp').checked) document.getElementById('optArp').click(); document.querySelector('#rollSeg [data-r=back]').click(); document.querySelectorAll('.scrim.show').forEach(s => s.classList.remove('show')); (document.querySelector('[data-lesson=menu]') || {click(){}}).click(); (document.querySelector('[data-lesson=exit]') || {click(){}}).click(); document.getElementById('btnClear').click()")
             out['system'] = await a.evaluate("document.getElementById('sysName').textContent + ' ' + document.getElementById('sysCount').textContent")
             out['L short'] = await a.evaluate("T.row([['T', 210], ['P', 270], ['H', 330], ['K', 150], ['W', 90], ['R', 30]].map(([k, d]) => [k, () => T.path('l', [[d, 'S']])]))")
             out['R short'] = await a.evaluate("T.row([['-F', 210], ['-P', 270], ['-L', 330], ['-R', 150], ['-B', 90], ['-G', 30]].map(([k, d]) => [k, () => T.path('r', [[d, 'S']])]))")
@@ -66,7 +66,9 @@ async def main():
               got.push('tap then push: ' + await T.stroke(() => { T.tap('r'); T.path('l', [[270, 'S']]); }));
               got.push('K, tap, long up-left: ' + await T.stroke(() => { T.path('r', [[150, 'S']]); T.tap('l'); T.path('r', [[230, 'L']]); }));
               got.push('next stroke starts left: ' + await T.stroke(() => T.path('r', [[270, 'S']])));
-              got.push('tap twice then push: ' + await T.stroke(() => { T.tap('l'); T.tap('l'); T.path('l', [[90, 'S']]); }));
+              got.push('tap twice then push (W*): ' + await T.stroke(() => { T.tap('l'); T.tap('l'); T.path('l', [[90, 'S']]); }));
+              got.push('two taps (*): ' + await T.stroke(() => { T.tap('l'); T.tap('l'); }));
+              got.push('K, tap, -P, two taps (K*P): ' + await T.stroke(() => { T.path('l', [[150, 'S']]); T.tap('l'); T.path('l', [[270, 'S']]); T.tap('l'); T.tap('l'); }));
               const tint = document.getElementById('deck').classList.contains('one'); document.querySelector('#handSeg [data-h="2"]').click();
               return got.join(' | ') + ' | pad marked: ' + tint + ' | back to two: ' + !document.getElementById('deck').classList.contains('one'); })()""")
             out['look up panel'] = await a.evaluate("""(async () => { document.getElementById('btnLookup').click(); for (const ch of 'cat') Array.from(document.querySelectorAll('#qwerty [data-q]')).find(n => n.dataset.q === ch).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 8 }));
@@ -79,8 +81,8 @@ async def main():
             out['dictionaries panel'] = await a.evaluate("""(() => { document.getElementById('btnClear').click(); document.getElementById('btnSys').click(); const r = document.querySelectorAll('#dictList .dict').length + ' dictionaries, first ' + document.querySelector('#dictList .nm').textContent + ' [' + document.querySelector('#dictList .meta').textContent.replace('remove', '').trim() + '] | ' + document.querySelectorAll('#plugList .dict').length + ' plugin rows | ' + document.querySelector('#library .fine').textContent.slice(0, 40); document.querySelector('#library [data-close]').click(); return r; })()""")
             out['settings panel'] = await a.evaluate("(() => { document.getElementById('btnSettings').click(); const r = document.querySelectorAll('#settings input[type=range]').length + ' sliders, ' + document.querySelectorAll('#settings .tog').length + ' switches, theme ' + document.documentElement.dataset.theme; document.querySelector('#settings [data-close]').click(); return r; })()")
         finally:      # whatever happened above, the writer gets their own settings back
-            await a.evaluate("(k) => { T.setNum('wait', k.wait); document.querySelector('#rollSeg [data-r=' + k.rolls + ']').click(); if (k.arp !== document.getElementById('optArp').checked) document.getElementById('optArp').click(); document.getElementById('btnClear').click(); }", keep)
-        out['restored'] = await a.evaluate("'wait=' + T.num('wait')")
+            await a.evaluate("(k) => { T.setNum('wait', k.wait); document.querySelector('#rollSeg [data-r=' + k.rolls + ']').click(); Array.from(document.querySelectorAll('#handSeg button')).find(b => b.dataset.h === k.hands).click(); if (k.arp !== document.getElementById('optArp').checked) document.getElementById('optArp').click(); document.getElementById('btnClear').click(); }", keep)
+        out['restored'] = await a.evaluate("'wait=' + T.num('wait') + ' thumbs=' + document.querySelector('#handSeg [aria-pressed=true]').dataset.h + ' rolls=' + document.querySelector('#rollSeg [aria-pressed=true]').dataset.r + ' arpeggiate=' + document.getElementById('optArp').checked")
         out['errors'] = errs
         for k, v in out.items(): print(k, '=>', v)
 asyncio.run(main())
